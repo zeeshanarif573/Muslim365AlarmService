@@ -6,13 +6,14 @@ package com.example.muhammadzeeshan.muslim360withservice.Model;
 
 public class MainData {
 
-    String Id, Date, Azan, Time, NotiType;
+    String Id, Date, Azan, time, NotiType, tunePath;
 
-    public MainData(String date, String azan, String time, String notiType) {
+    public MainData(String date, String azan, String time, String notiType, String tunePath) {
         Date = date;
         Azan = azan;
-        Time = time;
+        this.time = time;
         NotiType = notiType;
+        this.tunePath = tunePath;
     }
 
     public MainData() {
@@ -43,11 +44,11 @@ public class MainData {
     }
 
     public String getTime() {
-        return Time;
+        return time;
     }
 
     public void setTime(String time) {
-        Time = time;
+        this.time = time;
     }
 
     public String getNotiType() {
@@ -56,5 +57,13 @@ public class MainData {
 
     public void setNotiType(String notiType) {
         NotiType = notiType;
+    }
+
+    public String getTunePath() {
+        return tunePath;
+    }
+
+    public void setTunePath(String tunePath) {
+        this.tunePath = tunePath;
     }
 }

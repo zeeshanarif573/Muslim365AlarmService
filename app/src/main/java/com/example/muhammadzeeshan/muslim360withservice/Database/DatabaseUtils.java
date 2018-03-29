@@ -3,6 +3,7 @@ package com.example.muhammadzeeshan.muslim360withservice.Database;
 import android.content.Context;
 import android.util.Log;
 
+import com.example.muhammadzeeshan.muslim360withservice.Model.MainData;
 import com.example.muhammadzeeshan.muslim360withservice.Model.ManualCorrection;
 import com.example.muhammadzeeshan.muslim360withservice.Model.NotiType;
 import com.example.muhammadzeeshan.muslim360withservice.Model.Timings;
@@ -50,12 +51,11 @@ public class DatabaseUtils {
         if (manualCorrectionList.size() > 0) {
             for (ManualCorrection manualCorrection : manualCorrectionList) {
 
-                Log.e("AgentManualCorrection", "Id: " + manualCorrection.getId());
                 Log.e("AgentManualCorrection", "Date: " + manualCorrection.getDate());
                 Log.e("AgentManualCorrection", "Azan: " + manualCorrection.getAzan());
                 Log.e("AgentManualCorrection", "Timing: " + manualCorrection.getTiming());
-
             }
+
         } else {
             Log.e("AgentTodayTimings", "Empty");
         }
@@ -76,7 +76,6 @@ public class DatabaseUtils {
         if (notiTypeList.size() > 0) {
             for (NotiType notiType : notiTypeList) {
 
-                Log.e("AgentNoti_Type", "Id: " + notiType.getId());
                 Log.e("AgentNoti_Type", "Date: " + notiType.getDate());
                 Log.e("AgentNoti_Type", "Azan: " + notiType.getAzan());
                 Log.e("AgentNoti_Type", "Type: " + notiType.getType());
@@ -97,26 +96,45 @@ public class DatabaseUtils {
 
     public static void peekAllDataFromTodayTimimgs(Context context) {
 
+        DatabaseHelper databaseHelper = new DatabaseHelper(context);
+        List<TodayTimings> todayTimingsList = databaseHelper.getAllTodayTimingData();
+
+        if (todayTimingsList.size() > 0) {
+            for (TodayTimings todayTimings : todayTimingsList) {
+
+                Log.e("AgentTodayTimings", "Date: " + todayTimings.getDate());
+                Log.e("AgentTodayTimings", "Azan: " + todayTimings.getAzan());
+                Log.e("AgentTodayTimings", "Time: " + todayTimings.getActualTime());
+            }
+
+        } else {
+            Log.e("AgentTodayTimings", "Empty");
+        }
+
+    }
+
+
+    public static void peekAlarmTriggerData(Context context) {
+
         //Get Whole Current Date....................
         Calendar getDate = Calendar.getInstance();
         String strDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
 
         DatabaseHelper databaseHelper = new DatabaseHelper(context);
-        List<TodayTimings> todayTimingsList = databaseHelper.getAlarmTriggerTime(strDate);
+        List<MainData> mainDataList = databaseHelper.getAlarmTriggerTime();
 
-        if (todayTimingsList.size() > 0) {
-            for (TodayTimings todayTimings : todayTimingsList) {
+        if (mainDataList.size() > 0) {
+            for (MainData mainData : mainDataList) {
 
-                Log.e("AgentTodayTimings", "Id: " + todayTimings.getId());
-                Log.e("AgentTodayTimings", "Date: " + todayTimings.getDate());
-                Log.e("AgentTodayTimings", "Azan: " + todayTimings.getAzan());
-                Log.e("AgentTodayTimings", "ActualTime: " + todayTimings.getActualTime());
-                Log.e("AgentTodayTimings", "NotiType: " + todayTimings.getNotiType());
-                Log.e("AgentTodayTimings", "TunePath: " + todayTimings.getTunePath());
+            //    Log.e("AgentMainData", "Date: " + mainData.getDate());
+                Log.e("AgentMainData", "Azan: " + mainData.getAzan());
+                Log.e("AgentMainData", "Time: " + mainData.getTime());
+                Log.e("AgentMainData", "Noti_Type: " + mainData.getNotiType());
+                Log.e("AgentMainData", "Tune_Path: " + mainData.getTunePath());
             }
 
         } else {
-            Log.e("AgentTodayTimings", "Empty");
+            Log.e("AgentMainData", "Empty");
         }
 
     }

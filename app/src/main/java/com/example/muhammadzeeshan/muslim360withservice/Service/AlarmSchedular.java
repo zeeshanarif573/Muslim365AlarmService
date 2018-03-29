@@ -70,13 +70,153 @@ public class AlarmSchedular extends Service {
         Log.e("TunePath", sharedPreferenceHandler.getTunePath());
 
         loadAllTimingsJsonFileAndSaveIntoDatabase();
-        //    getTodayDataFromMasterAndSaveInTodayTable();
+        getTodayDataFromMasterAndSaveInTodayData();
         loadManualCorrectionJsonAndSaveIntoTable();
         loadDTSJsonAndSaveIntoTable();
         loadNotiTypeJsonAndSaveIntoTable();
         loadTunePathJsonAndSaveIntoTable();
 
+        DatabaseUtils.peekAlarmTriggerData(this);
+
         return super.onStartCommand(intent, flags, startId);
+    }
+
+
+    private void resetAllValuesAndData() {
+
+        databaseHelper.deleteAzanTimings();
+        DatabaseUtils.peekAllDataFromTimimgs(this);
+
+        databaseHelper.deleteTodayAzanTimings();
+        DatabaseUtils.peekAllDataFromTodayTimimgs(this);
+
+        sharedPreferenceHandler.setDtsValue("");
+        sharedPreferenceHandler.setTunePath("");
+    }
+
+    private void loadAllTimingsJsonFileAndSaveIntoDatabase() {
+        ArrayList<Timings> azaanTimingsList = new ArrayList();
+        String jsonString = loadJSONFromAzanTimings();
+        try {
+
+            JSONObject jsonObject = new JSONObject(jsonString);
+            JSONArray jsonArray = jsonObject.getJSONArray("data");
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject getData = jsonArray.getJSONObject(i);
+                JSONObject getTimings = getData.getJSONObject("timings");
+
+                Timings azanTimings = new Timings(i + 1, getTimings.getString("Fajr"), getTimings.getString("Sunrise"),
+                        getTimings.getString("Dhuhr"), getTimings.getString("Asr"), getTimings.getString("Sunset"),
+                        getTimings.getString("Maghrib"), getTimings.getString("Isha"), getTimings.getString("Imsak"),
+                        getTimings.getString("Midnight"));
+
+                azaanTimingsList.add(azanTimings);
+            }
+
+            if (azaanTimingsList.size() > 0) {
+                databaseHelper.insertIntoAzanTable(azaanTimingsList);
+                DatabaseUtils.peekAllDataFromTimimgs(this);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void loadManualCorrectionJsonAndSaveIntoTable() {
+
+        //Get Whole Current Date....................
+        Calendar getDate = Calendar.getInstance();
+        String strDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
+
+        ArrayList<ManualCorrection> manualCorrectionList = new ArrayList();
+        String jsonString = loadManualCorrectionJSON();
+        try {
+
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject getData = jsonArray.getJSONObject(i);
+
+                ManualCorrection manualCorrection = new ManualCorrection(strDate, getData.getString("Azan"), getData.getString("Timing"));
+                manualCorrectionList.add(manualCorrection);
+            }
+
+            if (manualCorrectionList.size() > 0) {
+                databaseHelper.insertIntoManualCorrection(manualCorrectionList);
+                DatabaseUtils.peekAllDataFromManualCorrection(this);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadDTSJsonAndSaveIntoTable() {
+
+        String jsonString = loadDTSJSON();
+
+        try {
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            JSONObject getData = jsonArray.getJSONObject(0);
+            DTSValue = getData.getString("Value");
+
+            databaseHelper.insertIntoDTS(DTSValue);
+            DatabaseUtils.peekDataFromDTS(this);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadNotiTypeJsonAndSaveIntoTable() {
+
+        //Get Whole Current Date....................
+        Calendar getDate = Calendar.getInstance();
+        String strDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
+
+        ArrayList<NotiType> notiTypeList = new ArrayList();
+        String jsonString = loadNotiTypeJSON();
+        try {
+
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject getData = jsonArray.getJSONObject(i);
+
+                NotiType notiType = new NotiType(strDate, getData.getString("Azan"), getData.getString("Type"));
+                notiTypeList.add(notiType);
+            }
+
+            if (notiTypeList.size() > 0) {
+                databaseHelper.insertIntoNotiType(notiTypeList);
+                DatabaseUtils.peekAllDataFromNotiType(this);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadTunePathJsonAndSaveIntoTable() {
+
+        String jsonString = loadTunePathJSON();
+
+        try {
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            JSONObject getData = jsonArray.getJSONObject(0);
+            TPath = getData.getString("TPath");
+
+            databaseHelper.insertIntoTunePath(TPath);
+            DatabaseUtils.peekDataFromTunePath(this);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void getTodayDataFromMasterAndSaveInTodayData() {
@@ -126,142 +266,6 @@ public class AlarmSchedular extends Service {
         }
     }
 
-    private void loadTunePathJsonAndSaveIntoTable() {
-
-        String jsonString = loadTunePathJSON();
-
-        try {
-            JSONArray jsonArray = new JSONArray(jsonString);
-
-            JSONObject getData = jsonArray.getJSONObject(0);
-            TPath = getData.getString("TPath");
-
-            databaseHelper.insertIntoTunePath(TPath);
-            DatabaseUtils.peekDataFromTunePath(this);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadNotiTypeJsonAndSaveIntoTable() {
-
-        //Get Whole Current Date....................
-        Calendar getDate = Calendar.getInstance();
-        String strDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
-
-        ArrayList<NotiType> notiTypeList = new ArrayList();
-        String jsonString = loadNotiTypeJSON();
-        try {
-
-            JSONArray jsonArray = new JSONArray(jsonString);
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject getData = jsonArray.getJSONObject(i);
-
-                NotiType notiType = new NotiType(strDate, getData.getString("Azan"), getData.getString("Type"));
-                notiTypeList.add(notiType);
-            }
-
-            if (notiTypeList.size() > 0) {
-                databaseHelper.insertIntoNotiType(notiTypeList);
-                DatabaseUtils.peekAllDataFromNotiType(this);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadDTSJsonAndSaveIntoTable() {
-
-        String jsonString = loadDTSJSON();
-
-        try {
-            JSONArray jsonArray = new JSONArray(jsonString);
-
-            JSONObject getData = jsonArray.getJSONObject(0);
-            DTSValue = getData.getString("Value");
-
-            databaseHelper.insertIntoDTS(DTSValue);
-            DatabaseUtils.peekDataFromDTS(this);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadManualCorrectionJsonAndSaveIntoTable() {
-
-        //Get Whole Current Date....................
-        Calendar getDate = Calendar.getInstance();
-        String strDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
-
-        ArrayList<ManualCorrection> manualCorrectionList = new ArrayList();
-        String jsonString = loadManualCorrectionJSON();
-        try {
-
-            JSONArray jsonArray = new JSONArray(jsonString);
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject getData = jsonArray.getJSONObject(i);
-
-                ManualCorrection manualCorrection = new ManualCorrection(strDate, getData.getString("Azan"), getData.getString("Timing"));
-                manualCorrectionList.add(manualCorrection);
-            }
-
-            if (manualCorrectionList.size() > 0) {
-                databaseHelper.insertIntoManualCorrection(manualCorrectionList);
-                DatabaseUtils.peekAllDataFromManualCorrection(this);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadAllTimingsJsonFileAndSaveIntoDatabase() {
-        ArrayList<Timings> azaanTimingsList = new ArrayList();
-        String jsonString = loadJSONFromAzanTimings();
-        try {
-
-            JSONObject jsonObject = new JSONObject(jsonString);
-            JSONArray jsonArray = jsonObject.getJSONArray("data");
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject getData = jsonArray.getJSONObject(i);
-                JSONObject getTimings = getData.getJSONObject("timings");
-
-                Timings azanTimings = new Timings(i + 1, getTimings.getString("Fajr"), getTimings.getString("Sunrise"),
-                        getTimings.getString("Dhuhr"), getTimings.getString("Asr"), getTimings.getString("Sunset"),
-                        getTimings.getString("Maghrib"), getTimings.getString("Isha"), getTimings.getString("Imsak"),
-                        getTimings.getString("Midnight"));
-
-                azaanTimingsList.add(azanTimings);
-            }
-
-            if (azaanTimingsList.size() > 0) {
-                databaseHelper.insertIntoAzanTable(azaanTimingsList);
-                DatabaseUtils.peekAllDataFromTimimgs(this);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    private void resetAllValuesAndData() {
-
-        databaseHelper.deleteAzanTimings();
-        DatabaseUtils.peekAllDataFromTimimgs(this);
-
-        databaseHelper.deleteTodayAzanTimings();
-        DatabaseUtils.peekAllDataFromTodayTimimgs(this);
-
-        sharedPreferenceHandler.setDtsValue("");
-        sharedPreferenceHandler.setTunePath("");
-    }
 
     //Load JSON's...............................................
     private String loadJSONFromAzanTimings() {

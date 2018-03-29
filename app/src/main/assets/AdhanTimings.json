@@ -356,6 +356,19 @@
         "Fajr": "09:40 (PKT)",
         "Sunrise": "06:55 (PKT)",
         "Dhuhr": "09:41 (PKT)",
+        "Asr": "16:53 (PKT)",
+        "Sunset": "18:32 (PKT)",
+        "Maghrib": "16:54 (PKT)",
+        "Isha": "11:43 (PKT)",
+        "Imsak": "05:29 (PKT)",
+        "Midnight": "00:44 (PKT)"
+      }
+    },
+    {
+      "timings": {
+        "Fajr": "09:40 (PKT)",
+        "Sunrise": "06:55 (PKT)",
+        "Dhuhr": "09:41 (PKT)",
         "Asr": "09:42 (PKT)",
         "Sunset": "18:32 (PKT)",
         "Maghrib": "18:32 (PKT)",

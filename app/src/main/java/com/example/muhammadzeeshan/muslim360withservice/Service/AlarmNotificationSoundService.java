@@ -14,7 +14,9 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.example.muhammadzeeshan.muslim360withservice.MainActivity;
+import com.example.muhammadzeeshan.muslim360withservice.MyApp;
 import com.example.muhammadzeeshan.muslim360withservice.R;
+import com.example.muhammadzeeshan.muslim360withservice.broadcast_receiver.NotificationDismissedReceiver;
 
 /**
  * Created by Muhammad Zeeshan on 3/26/2018.
@@ -39,7 +41,7 @@ public class AlarmNotificationSoundService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        mediaPlayer = MediaPlayer.create(this, R.raw.let_me_love_you);
+        mediaPlayer = MediaPlayer.create(this, R.raw.beep);
         mediaPlayer.setLooping(true);
 
         Log.e("Service", "OnCreate");
@@ -49,6 +51,7 @@ public class AlarmNotificationSoundService extends Service {
         filter.addAction(Intent.ACTION_SCREEN_ON);
         this.registerReceiver(broadCast, filter);
 
+        sendNotification("Wake Up! Wake Up! Alarm started!!");
     }
 
     @Override
@@ -67,14 +70,6 @@ public class AlarmNotificationSoundService extends Service {
         }
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-
-        //Send notification
-        sendNotification("Wake Up! Wake Up! Alarm started!!");
-
-        return super.onStartCommand(intent, flags, startId);
-    }
 
     private void sendNotification(String msg) {
 
@@ -83,19 +78,27 @@ public class AlarmNotificationSoundService extends Service {
 
         //get pending intent
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
+                new Intent(this, MyApp.class), PendingIntent.FLAG_UPDATE_CURRENT);
 
         //Create notification
         NotificationCompat.Builder alamNotificationBuilder = new NotificationCompat.Builder(
                 this).setContentTitle("Alarm").setSmallIcon(R.mipmap.ic_launcher)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(msg))
-                .setContentText(msg).setAutoCancel(true);
+                .setContentText(msg).setAutoCancel(true)
+                .setDeleteIntent(createOnDismissedIntent(this, NOTIFICATION_ID));
         alamNotificationBuilder.setContentIntent(contentIntent);
 
         //notiy notification manager about new notification
         alarmNotificationManager.notify(NOTIFICATION_ID, alamNotificationBuilder.build());
     }
 
+    private PendingIntent createOnDismissedIntent(Context context, int notificationId) {
+        Intent intent = new Intent(context, NotificationDismissedReceiver.class);
+        PendingIntent pendingIntent =
+                PendingIntent.getBroadcast(context.getApplicationContext(),
+                        notificationId, intent, 0);
+        return pendingIntent;
+    }
 
     public class ScreenOnOffReceiver extends BroadcastReceiver {
 

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.example.muhammadzeeshan.muslim360withservice.Model.Timings;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodayTimings;
@@ -33,7 +34,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String CREATE_TODAY_TIMINGS_TABLE = "CREATE TABLE " + TABLE_TODAY_TIMINGS +
             "(Id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "Azan TEXT, Timing TEXT, Status TEXT); ";
+            "Date TEXT, Azan TEXT, Timing TEXT, Status TEXT); ";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -74,6 +75,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.insert(TABLE_AZAN_TIMIMG, null, values);
         }
 
+        db.close();
+    }
+    public void deleteAzanTimings() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "delete from " + TABLE_AZAN_TIMIMG;
+        db.execSQL(query);
         db.close();
     }
 
@@ -119,6 +126,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         for (TodayTimings todayTimings : todayTimingsList) {
             ContentValues values = new ContentValues();
 
+            values.put("Date", todayTimings.getDate());
             values.put("Azan", todayTimings.getAzan());
             values.put("Timing", todayTimings.getTiming());
             values.put("Status", todayTimings.getStatus());
@@ -225,16 +233,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return count;
     }
 
-    public boolean getDateCount(String date) {
-        String countQuery = "SELECT  * FROM " + TABLE_TODAY_TIMINGS + "WHERE Date = " + date;
+    public int getDateCount(String date) {
+        String countQuery = "SELECT * FROM " + TABLE_TODAY_TIMINGS + " WHERE Date ='" + date + "'";
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(countQuery, null);
         int count = cursor.getCount();
+
+        Log.e("Cursor Count", String.valueOf(count));
         cursor.close();
-        if (count > 0) {
-            return true;
-        }
-        return false;
+        return count;
     }
 
 

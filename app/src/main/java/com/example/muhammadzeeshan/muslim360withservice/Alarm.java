@@ -6,7 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
 
-import com.example.muhammadzeeshan.muslim360withservice.Service.AlarmReciever;
+import com.example.muhammadzeeshan.muslim360withservice.broadcast_receiver.AlarmReciever;
 
 import java.util.Calendar;
 
@@ -15,10 +15,9 @@ import java.util.Calendar;
  * Created by Muhammad Zeeshan on 3/20/2018.
  */
 
-public class SetUpAlarm {
+public class Alarm {
 
     public void setAlarm(Calendar targetCal, String nextNearestAlarm, Context context, int reqCode) {
-
         Intent intent = new Intent(context, AlarmReciever.class);
         intent.putExtra("nearestTime", nextNearestAlarm);
         intent.putExtra("reqCode", reqCode);

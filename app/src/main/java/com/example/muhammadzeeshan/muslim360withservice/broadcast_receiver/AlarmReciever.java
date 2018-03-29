@@ -1,4 +1,4 @@
-package com.example.muhammadzeeshan.muslim360withservice.Service;
+package com.example.muhammadzeeshan.muslim360withservice.broadcast_receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,7 +12,8 @@ import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseHelper;
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseUtils;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodayTimings;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodaysData;
-import com.example.muhammadzeeshan.muslim360withservice.SetUpAlarm;
+import com.example.muhammadzeeshan.muslim360withservice.Alarm;
+import com.example.muhammadzeeshan.muslim360withservice.Service.AlarmNotificationSoundService;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -24,8 +25,7 @@ import java.util.List;
 
 public class AlarmReciever extends BroadcastReceiver {
 
-    SetUpAlarm setAlarm = new SetUpAlarm();
-
+    Alarm setAlarm = new Alarm();
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -101,6 +101,9 @@ public class AlarmReciever extends BroadcastReceiver {
             Log.e("Runing", "else");
             index = Integer.parseInt(date) + 1;
 
+            Calendar calDate = Calendar.getInstance();
+            String nextdate = calDate.get(Calendar.YEAR) + "/" + calDate.get(Calendar.MONTH) + "/" +index;
+
             List<TodaysData> getTodayDataList = databaseHelper.getTodaysData(String.valueOf(index));
 
             Log.e("listSize", getTodayDataList.size() + "");
@@ -118,11 +121,11 @@ public class AlarmReciever extends BroadcastReceiver {
                 DatabaseUtils.peekAllDataFromTodayTimimgs(context);
 
                 List<TodayTimings> todayTimingsList = new ArrayList<>();
-                todayTimingsList.add(new TodayTimings(strDate ,"Fajar", todaysData.getFajr(), "0"));
-                todayTimingsList.add(new TodayTimings(strDate ,"Dhuhr", todaysData.getDhuhr(), "0"));
-                todayTimingsList.add(new TodayTimings(strDate ,"Asr", todaysData.getAsr(), "0"));
-                todayTimingsList.add(new TodayTimings(strDate ,"Maghrib", todaysData.getMaghrib(), "0"));
-                todayTimingsList.add(new TodayTimings(strDate ,"Isha", todaysData.getIsha(), "0"));
+                todayTimingsList.add(new TodayTimings(nextdate ,"Fajar", todaysData.getFajr(), "0"));
+                todayTimingsList.add(new TodayTimings(nextdate ,"Dhuhr", todaysData.getDhuhr(), "0"));
+                todayTimingsList.add(new TodayTimings(nextdate ,"Asr", todaysData.getAsr(), "0"));
+                todayTimingsList.add(new TodayTimings(nextdate ,"Maghrib", todaysData.getMaghrib(), "0"));
+                todayTimingsList.add(new TodayTimings(nextdate ,"Isha", todaysData.getIsha(), "0"));
 
                 databaseHelper.insertIntoTodayTiming(todayTimingsList);
                 DatabaseUtils.peekAllDataFromTodayTimimgs(context);

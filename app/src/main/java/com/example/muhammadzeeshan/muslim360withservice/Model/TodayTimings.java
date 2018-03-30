@@ -6,14 +6,13 @@ package com.example.muhammadzeeshan.muslim360withservice.Model;
 
 public class TodayTimings {
 
-    String Id, date, Azan , Timing, Status;
+    String Id, date, Azan, ActualTime;
 
 
-    public TodayTimings(String date, String azan, String timing, String status) {
+    public TodayTimings(String date, String azan, String actualTime) {
         this.date = date;
         Azan = azan;
-        Timing = timing;
-        Status = status;
+        ActualTime = actualTime;
     }
 
     public TodayTimings() {
@@ -35,22 +34,6 @@ public class TodayTimings {
         Azan = azan;
     }
 
-    public String getTiming() {
-        return Timing;
-    }
-
-    public void setTiming(String timing) {
-        Timing = timing;
-    }
-
-    public String getStatus() {
-        return Status;
-    }
-
-    public void setStatus(String status) {
-        Status = status;
-    }
-
     public String getDate() {
         return date;
     }
@@ -58,4 +41,13 @@ public class TodayTimings {
     public void setDate(String date) {
         this.date = date;
     }
+
+    public String getActualTime() {
+        return ActualTime;
+    }
+
+    public void setActualTime(String actualTime) {
+        ActualTime = actualTime;
+    }
+
 }

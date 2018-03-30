@@ -183,14 +183,14 @@ public class MyApp extends Application {
 
         Log.e("Inserting...", "Inserting Into Today Timing...");
 
-        todayTimingsList.add(new TodayTimings(strDate, "Fajar", FajrTime, "0"));
-        todayTimingsList.add(new TodayTimings(strDate, "Dhuhr", DhuhrTime, "0"));
-        todayTimingsList.add(new TodayTimings(strDate, "Asr", AsrTime, "0"));
-        todayTimingsList.add(new TodayTimings(strDate, "Maghrib", MaghribTime, "0"));
-        todayTimingsList.add(new TodayTimings(strDate, "Isha", IshaTime, "0"));
-
-        databaseHelper.insertIntoTodayTiming(todayTimingsList);
-        DatabaseUtils.peekAllDataFromTodayTimimgs(this);
+//        todayTimingsList.add(new TodayTimings(strDate, "Fajar", FajrTime, "0"));
+//        todayTimingsList.add(new TodayTimings(strDate, "Dhuhr", DhuhrTime, "0"));
+//        todayTimingsList.add(new TodayTimings(strDate, "Asr", AsrTime, "0"));
+//        todayTimingsList.add(new TodayTimings(strDate, "Maghrib", MaghribTime, "0"));
+//        todayTimingsList.add(new TodayTimings(strDate, "Isha", IshaTime, "0"));
+//
+//        databaseHelper.insertIntoTodayTiming(todayTimingsList);
+//        DatabaseUtils.peekAllDataFromTodayTimimgs(this);
 
         Log.e("Retrieve...", "Data from Today Timing Retrieve Successfully...");
     }

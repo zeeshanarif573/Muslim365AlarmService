@@ -81,15 +81,15 @@ public class DeviceBootReceiver extends BroadcastReceiver {
                 if (getTodayDataList.size() > 0) {
                     TodaysData todaysData = getTodayDataList.get(0);
 
-                    List<TodayTimings> todayTimingsList = new ArrayList<>();
-                    todayTimingsList.add(new TodayTimings(currentDate, "Fajar", todaysData.getFajr(), "0"));
-                    todayTimingsList.add(new TodayTimings(currentDate, "Dhuhr", todaysData.getDhuhr(), "0"));
-                    todayTimingsList.add(new TodayTimings(currentDate, "Asr", todaysData.getAsr(), "0"));
-                    todayTimingsList.add(new TodayTimings(currentDate, "Maghrib", todaysData.getMaghrib(), "0"));
-                    todayTimingsList.add(new TodayTimings(currentDate, "Isha", todaysData.getIsha(), "0"));
-
-                    databaseHelper.insertIntoTodayTiming(todayTimingsList);
-                    DatabaseUtils.peekAllDataFromTodayTimimgs(context);
+//                    List<TodayTimings> todayTimingsList = new ArrayList<>();
+//                    todayTimingsList.add(new TodayTimings(currentDate, "Fajar", todaysData.getFajr(), "0"));
+//                    todayTimingsList.add(new TodayTimings(currentDate, "Dhuhr", todaysData.getDhuhr(), "0"));
+//                    todayTimingsList.add(new TodayTimings(currentDate, "Asr", todaysData.getAsr(), "0"));
+//                    todayTimingsList.add(new TodayTimings(currentDate, "Maghrib", todaysData.getMaghrib(), "0"));
+//                    todayTimingsList.add(new TodayTimings(currentDate, "Isha", todaysData.getIsha(), "0"));
+//
+//                    databaseHelper.insertIntoTodayTiming(todayTimingsList);
+//                    DatabaseUtils.peekAllDataFromTodayTimimgs(context);
 
                     setupAlarm2(context, currentDate, currentTime, 100);
                 }
@@ -161,14 +161,14 @@ public class DeviceBootReceiver extends BroadcastReceiver {
                 DatabaseUtils.peekAllDataFromTodayTimimgs(context);
 
                 List<TodayTimings> todayTimingsList = new ArrayList<>();
-                todayTimingsList.add(new TodayTimings(nextdate, "Fajar", todaysData.getFajr(), "0"));
-                todayTimingsList.add(new TodayTimings(nextdate, "Dhuhr", todaysData.getDhuhr(), "0"));
-                todayTimingsList.add(new TodayTimings(nextdate, "Asr", todaysData.getAsr(), "0"));
-                todayTimingsList.add(new TodayTimings(nextdate, "Maghrib", todaysData.getMaghrib(), "0"));
-                todayTimingsList.add(new TodayTimings(nextdate, "Isha", todaysData.getIsha(), "0"));
-
-                databaseHelper.insertIntoTodayTiming(todayTimingsList);
-                DatabaseUtils.peekAllDataFromTodayTimimgs(context);
+//                todayTimingsList.add(new TodayTimings(nextdate, "Fajar", todaysData.getFajr(), "0"));
+//                todayTimingsList.add(new TodayTimings(nextdate, "Dhuhr", todaysData.getDhuhr(), "0"));
+//                todayTimingsList.add(new TodayTimings(nextdate, "Asr", todaysData.getAsr(), "0"));
+//                todayTimingsList.add(new TodayTimings(nextdate, "Maghrib", todaysData.getMaghrib(), "0"));
+//                todayTimingsList.add(new TodayTimings(nextdate, "Isha", todaysData.getIsha(), "0"));
+//
+//                databaseHelper.insertIntoTodayTiming(todayTimingsList);
+//                DatabaseUtils.peekAllDataFromTodayTimimgs(context);
 
                 Log.e("Next Nearest Alarm", nextNearestAlarm);
 

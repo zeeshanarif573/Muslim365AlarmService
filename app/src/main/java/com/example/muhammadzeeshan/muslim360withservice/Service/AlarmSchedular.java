@@ -8,6 +8,8 @@ import android.util.Log;
 
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseHelper;
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseUtils;
+import com.example.muhammadzeeshan.muslim360withservice.Model.ManualCorrection;
+import com.example.muhammadzeeshan.muslim360withservice.Model.NotiType;
 import com.example.muhammadzeeshan.muslim360withservice.Model.Timings;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodayTimings;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodaysData;
@@ -28,7 +30,7 @@ import java.util.List;
 
 public class AlarmSchedular extends Service {
 
-    String DataFilePath, DtsValue, McJson, NotitypeJson, TunePath;
+    String DataFilePath, DtsValue, McJson, NotitypeJson, TunePath, DTSValue, TPath;
     DatabaseHelper databaseHelper;
     SharedPreferenceHandler sharedPreferenceHandler;
 
@@ -67,17 +69,17 @@ public class AlarmSchedular extends Service {
         Log.e("DTSValue", sharedPreferenceHandler.getDtsValue());
         Log.e("TunePath", sharedPreferenceHandler.getTunePath());
 
-
-        loadDataJsonFileAndSaveIntoDatabase();
-        getTodayDataFromMasterAndSaveInTodayTable();
-
+        loadAllTimingsJsonFileAndSaveIntoDatabase();
+        //    getTodayDataFromMasterAndSaveInTodayTable();
+        loadManualCorrectionJsonAndSaveIntoTable();
+        loadDTSJsonAndSaveIntoTable();
+        loadNotiTypeJsonAndSaveIntoTable();
+        loadTunePathJsonAndSaveIntoTable();
 
         return super.onStartCommand(intent, flags, startId);
-
-
     }
 
-    private void getTodayDataFromMasterAndSaveInTodayTable() {
+    private void getTodayDataFromMasterAndSaveInTodayData() {
 
         //Get Whole Current Date....................
         Calendar getDate = Calendar.getInstance();
@@ -108,37 +110,119 @@ public class AlarmSchedular extends Service {
 
                 List<TodayTimings> todayTimingsList = new ArrayList<>();
 
-                todayTimingsList.add(new TodayTimings(strDate, "Fajar", FajrTime, "0"));
-                todayTimingsList.add(new TodayTimings(strDate, "Dhuhr", DhuhrTime, "0"));
-                todayTimingsList.add(new TodayTimings(strDate, "Asr", AsrTime, "0"));
-                todayTimingsList.add(new TodayTimings(strDate, "Maghrib", MaghribTime, "0"));
-                todayTimingsList.add(new TodayTimings(strDate, "Isha", IshaTime, "0"));
+                todayTimingsList.add(new TodayTimings(strDate, "Fajar", FajrTime));
+                todayTimingsList.add(new TodayTimings(strDate, "Dhuhr", DhuhrTime));
+                todayTimingsList.add(new TodayTimings(strDate, "Asr", AsrTime));
+                todayTimingsList.add(new TodayTimings(strDate, "Maghrib", MaghribTime));
+                todayTimingsList.add(new TodayTimings(strDate, "Isha", IshaTime));
 
                 databaseHelper.insertIntoTodayTiming(todayTimingsList);
                 DatabaseUtils.peekAllDataFromTodayTimimgs(this);
                 Log.e("Retrieve...", "Data from Today Timing Retrieve Successfully...");
             }
+
         } else {
             Log.e("TodaysData", "Empty");
         }
     }
 
+    private void loadTunePathJsonAndSaveIntoTable() {
 
-    private void resetAllValuesAndData() {
+        String jsonString = loadTunePathJSON();
 
-        databaseHelper.deleteAzanTimings();
-        DatabaseUtils.peekAllDataFromTimimgs(this);
+        try {
+            JSONArray jsonArray = new JSONArray(jsonString);
 
-        databaseHelper.deleteTodayAzanTimings();
-        DatabaseUtils.peekAllDataFromTodayTimimgs(this);
+            JSONObject getData = jsonArray.getJSONObject(0);
+            TPath = getData.getString("TPath");
 
-        sharedPreferenceHandler.setDtsValue("");
-        sharedPreferenceHandler.setTunePath("");
+            databaseHelper.insertIntoTunePath(TPath);
+            DatabaseUtils.peekDataFromTunePath(this);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private void loadDataJsonFileAndSaveIntoDatabase() {
+    private void loadNotiTypeJsonAndSaveIntoTable() {
+
+        //Get Whole Current Date....................
+        Calendar getDate = Calendar.getInstance();
+        String strDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
+
+        ArrayList<NotiType> notiTypeList = new ArrayList();
+        String jsonString = loadNotiTypeJSON();
+        try {
+
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject getData = jsonArray.getJSONObject(i);
+
+                NotiType notiType = new NotiType(strDate, getData.getString("Azan"), getData.getString("Type"));
+                notiTypeList.add(notiType);
+            }
+
+            if (notiTypeList.size() > 0) {
+                databaseHelper.insertIntoNotiType(notiTypeList);
+                DatabaseUtils.peekAllDataFromNotiType(this);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadDTSJsonAndSaveIntoTable() {
+
+        String jsonString = loadDTSJSON();
+
+        try {
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            JSONObject getData = jsonArray.getJSONObject(0);
+            DTSValue = getData.getString("Value");
+
+            databaseHelper.insertIntoDTS(DTSValue);
+            DatabaseUtils.peekDataFromDTS(this);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadManualCorrectionJsonAndSaveIntoTable() {
+
+        //Get Whole Current Date....................
+        Calendar getDate = Calendar.getInstance();
+        String strDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
+
+        ArrayList<ManualCorrection> manualCorrectionList = new ArrayList();
+        String jsonString = loadManualCorrectionJSON();
+        try {
+
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject getData = jsonArray.getJSONObject(i);
+
+                ManualCorrection manualCorrection = new ManualCorrection(strDate, getData.getString("Azan"), getData.getString("Timing"));
+                manualCorrectionList.add(manualCorrection);
+            }
+
+            if (manualCorrectionList.size() > 0) {
+                databaseHelper.insertIntoManualCorrection(manualCorrectionList);
+                DatabaseUtils.peekAllDataFromManualCorrection(this);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadAllTimingsJsonFileAndSaveIntoDatabase() {
         ArrayList<Timings> azaanTimingsList = new ArrayList();
-        String jsonString = loadJSONFromPath();
+        String jsonString = loadJSONFromAzanTimings();
         try {
 
             JSONObject jsonObject = new JSONObject(jsonString);
@@ -161,17 +245,93 @@ public class AlarmSchedular extends Service {
                 DatabaseUtils.peekAllDataFromTimimgs(this);
             }
 
-
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
-    private String loadJSONFromPath() {
+    private void resetAllValuesAndData() {
+
+        databaseHelper.deleteAzanTimings();
+        DatabaseUtils.peekAllDataFromTimimgs(this);
+
+        databaseHelper.deleteTodayAzanTimings();
+        DatabaseUtils.peekAllDataFromTodayTimimgs(this);
+
+        sharedPreferenceHandler.setDtsValue("");
+        sharedPreferenceHandler.setTunePath("");
+    }
+
+    //Load JSON's...............................................
+    private String loadJSONFromAzanTimings() {
         String json = null;
         try {
             InputStream is = this.getAssets().open("AdhanTimings.json");
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
+    }
+
+    private String loadManualCorrectionJSON() {
+        String json = null;
+        try {
+            InputStream is = this.getAssets().open("ManualCorrection.json");
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
+    }
+
+    private String loadDTSJSON() {
+        String json = null;
+        try {
+            InputStream is = this.getAssets().open("DTS.json");
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
+    }
+
+    private String loadNotiTypeJSON() {
+        String json = null;
+        try {
+            InputStream is = this.getAssets().open("NotiType.json");
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
+    }
+
+    private String loadTunePathJSON() {
+        String json = null;
+        try {
+            InputStream is = this.getAssets().open("TunePath.json");
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);

@@ -1,0 +1,22 @@
+[
+    {
+        "Azan": "Fajar",
+        "Timing": "2"
+    },
+    {
+        "Azan": "Dhuhr",
+        "Timing": "4"
+    },
+    {
+        "Azan": "Asr",
+        "Timing": "3"
+    },
+    {
+        "Azan": "Maghrib",
+        "Timing": "0"
+    },
+    {
+        "Azan": "Isha",
+        "Timing": "5"
+    }
+]

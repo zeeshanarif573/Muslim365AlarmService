@@ -1,0 +1,22 @@
+[
+    {
+        "Azan": "Fajr",
+        "Type": "1"
+    },
+    {
+        "Azan": "Dhuhr",
+        "Type": "1"
+    },
+    {
+        "Azan": "Asr",
+        "Type": "1"
+    },
+    {
+        "Azan": "Maghrib",
+        "Type": "1"
+    },
+    {
+        "Azan": "Isha",
+        "Type": "0"
+    }
+]

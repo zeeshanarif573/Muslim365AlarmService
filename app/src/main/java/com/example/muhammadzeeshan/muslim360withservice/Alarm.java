@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.example.muhammadzeeshan.muslim360withservice.broadcast_receiver.AlarmReciever;
@@ -25,7 +26,8 @@ public class Alarm {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         alarmManager.set(AlarmManager.RTC_WAKEUP, targetCal.getTimeInMillis(), pendingIntent);
 
-        Toast.makeText(context,"Next Alarm Set at: " + nextNearestAlarm , Toast.LENGTH_SHORT).show();
+        Log.e("Next Alarm Set at: " , nextNearestAlarm);
+
     }
 
 }

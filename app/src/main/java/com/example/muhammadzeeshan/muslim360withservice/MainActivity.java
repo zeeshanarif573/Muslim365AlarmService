@@ -21,4 +21,10 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("TunePath", "xyz.json");
         startService(intent);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopService(new Intent(this, AlarmSchedular.class));
+    }
 }

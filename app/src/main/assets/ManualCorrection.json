@@ -1,15 +1,15 @@
 [
     {
-        "Azan": "Fajar",
-        "Timing": "2"
+        "Azan": "Fajr",
+        "Timing": "0"
     },
     {
         "Azan": "Dhuhr",
-        "Timing": "4"
+        "Timing": "0"
     },
     {
         "Azan": "Asr",
-        "Timing": "3"
+        "Timing": "0"
     },
     {
         "Azan": "Maghrib",
@@ -17,6 +17,6 @@
     },
     {
         "Azan": "Isha",
-        "Timing": "5"
+        "Timing": "0"
     }
 ]

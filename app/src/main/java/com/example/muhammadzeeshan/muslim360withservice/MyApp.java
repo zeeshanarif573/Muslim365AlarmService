@@ -155,7 +155,7 @@ public class MyApp extends Application {
     }
 
     public void getDatafromMaster() {
-        List<TodaysData> getTodayDataList = databaseHelper.getTodaysData(String.valueOf(index));
+        List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(String.valueOf(index));
 
         if (getTodayDataList.size() > 0) {
             for (TodaysData todaysData : getTodayDataList) {

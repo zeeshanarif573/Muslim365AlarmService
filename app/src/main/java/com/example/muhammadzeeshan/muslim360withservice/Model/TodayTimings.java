@@ -6,24 +6,18 @@ package com.example.muhammadzeeshan.muslim360withservice.Model;
 
 public class TodayTimings {
 
-    String Id, date, Azan, ActualTime;
+    String date, Azan, Time, NotiType, TunePath;
 
 
-    public TodayTimings(String date, String azan, String actualTime) {
+    public TodayTimings(String date, String azan, String time, String notiType, String tunePath) {
         this.date = date;
         Azan = azan;
-        ActualTime = actualTime;
+        Time = time;
+        NotiType = notiType;
+        TunePath = tunePath;
     }
 
     public TodayTimings() {
-    }
-
-    public String getId() {
-        return Id;
-    }
-
-    public void setId(String id) {
-        Id = id;
     }
 
     public String getAzan() {
@@ -43,11 +37,26 @@ public class TodayTimings {
     }
 
     public String getActualTime() {
-        return ActualTime;
+        return Time;
     }
 
     public void setActualTime(String actualTime) {
-        ActualTime = actualTime;
+        Time = actualTime;
     }
 
+    public String getNotiType() {
+        return NotiType;
+    }
+
+    public void setNotiType(String notiType) {
+        NotiType = notiType;
+    }
+
+    public String getTunePath() {
+        return TunePath;
+    }
+
+    public void setTunePath(String tunePath) {
+        TunePath = tunePath;
+    }
 }

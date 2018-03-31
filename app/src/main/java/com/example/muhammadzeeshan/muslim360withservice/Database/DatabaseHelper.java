@@ -7,7 +7,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.example.muhammadzeeshan.muslim360withservice.MainActivity;
 import com.example.muhammadzeeshan.muslim360withservice.Model.MainData;
 import com.example.muhammadzeeshan.muslim360withservice.Model.ManualCorrection;
 import com.example.muhammadzeeshan.muslim360withservice.Model.NotiType;
@@ -24,14 +23,13 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 1;
-    private static final String DATABASE_NAME = "Azan";
+    private static final int DATABASE_VERSION = 2;
+    private static final String DATABASE_NAME = "Azaan";
 
     public static final String TABLE_AZAN_TIMIMG = "azan_timimgs";
-    public static final String TABLE_DTS = "day_time_saving";
+    public static final String TABLE_DTS = "DTS";
     public static final String TABLE_MANUAL_CORRECTION = "ManualCorrection";
     public static final String TABLE_NOTITYPE = "NotiType";
-    public static final String TABLE_TUNE_PATH = "TunePath";
     public static final String TABLE_TODAY_TIMINGS = "today_timimgs";
 
 
@@ -41,21 +39,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             " Midnight TEXT );";
 
     private static final String CREATE_MANUAL_CORRECTION_TABLE = "CREATE TABLE " + TABLE_MANUAL_CORRECTION +
-            "(Id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "Date TEXT, Azan TEXT, Time TEXT); ";
+            "(Date TEXT, Azan TEXT, Time TEXT); ";
 
     private static final String CREATE_DTS_TABLE = "CREATE TABLE " + TABLE_DTS +
             "(Value TEXT); ";
 
     private static final String CREATE_NOTI_TYPE_TABLE = "CREATE TABLE " + TABLE_NOTITYPE +
-            "(Id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "Date TEXT, Azan TEXT, NotiType TEXT); ";
-
-    private static final String CREATE_TUNE_PATH_TABLE = "CREATE TABLE " + TABLE_TUNE_PATH +
-            "(TPath TEXT); ";
+            "(Date TEXT, Azan TEXT, NotiType TEXT, TunePath TEXT); ";
 
     private static final String CREATE_TODAY_TIMINGS_TABLE = "CREATE TABLE " + TABLE_TODAY_TIMINGS +
-            "(Date TEXT, Azan TEXT, Time TEXT); ";
+            "(Date TEXT, Azan TEXT, Time TEXT, NotiType TEXT, TunePath TEXT); ";
 
 
     public DatabaseHelper(Context context) {
@@ -68,7 +61,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL(CREATE_MANUAL_CORRECTION_TABLE);
         sqLiteDatabase.execSQL(CREATE_DTS_TABLE);
         sqLiteDatabase.execSQL(CREATE_NOTI_TYPE_TABLE);
-        sqLiteDatabase.execSQL(CREATE_TUNE_PATH_TABLE);
         sqLiteDatabase.execSQL(CREATE_TODAY_TIMINGS_TABLE);
     }
 
@@ -78,7 +70,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_MANUAL_CORRECTION);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_DTS);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_NOTITYPE);
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_TUNE_PATH);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_TODAY_TIMINGS);
     }
 
@@ -179,14 +170,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             do {
                 ManualCorrection manualCorrection = new ManualCorrection();
 
-
-                manualCorrection.setId(cursor.getString(0));
-                manualCorrection.setDate(cursor.getString(1));
-                manualCorrection.setAzan(cursor.getString(2));
-                manualCorrection.setTiming(cursor.getString(3));
+                manualCorrection.setDate(cursor.getString(0));
+                manualCorrection.setAzan(cursor.getString(1));
+                manualCorrection.setTiming(cursor.getString(2));
 
                 // Adding contact to list
                 manualCorrectionList.add(manualCorrection);
+
             } while (cursor.moveToNext());
         }
 
@@ -228,9 +218,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         for (NotiType notiType : notiTypeList) {
             ContentValues values = new ContentValues();
 
-            values.put("Date", notiType.getDate());
             values.put("Azan", notiType.getAzan());
             values.put("NotiType", notiType.getType());
+            values.put("TunePath", notiType.getTunePath());
 
             db.insert(TABLE_NOTITYPE, null, values);
         }
@@ -251,10 +241,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             do {
                 NotiType notiType = new NotiType();
 
-                notiType.setId(cursor.getString(0));
-                notiType.setDate(cursor.getString(1));
-                notiType.setAzan(cursor.getString(2));
-                notiType.setType(cursor.getString(3));
+                notiType.setAzan(cursor.getString(0));
+                notiType.setType(cursor.getString(1));
+                notiType.setTunePath(cursor.getString(2));
 
                 // Adding contact to list
                 notiTypeList.add(notiType);
@@ -262,34 +251,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
 
         return notiTypeList;
-    }
-
-
-    /* TunePath Table Functions */
-    public void insertIntoTunePath(String TPath) {
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-
-        values.put("TPath", TPath);
-        db.insert(TABLE_TUNE_PATH, null, values);
-
-
-        db.close();
-    }
-
-    public String getTunePathData() {
-        String TPath = "";
-        String selectQuery = "SELECT * FROM " + TABLE_TUNE_PATH;
-
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, null);
-
-        if (cursor.moveToNext()) {
-
-            TPath = cursor.getString(0);
-        }
-        return TPath;
     }
 
 
@@ -303,6 +264,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             values.put("Date", todayTimings.getDate());
             values.put("Azan", todayTimings.getAzan());
             values.put("Time", todayTimings.getActualTime());
+            values.put("NotiType", todayTimings.getNotiType());
+            values.put("TunePath", todayTimings.getTunePath());
 
             db.insert(TABLE_TODAY_TIMINGS, null, values);
         }
@@ -310,7 +273,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    public List<TodaysData> getTodaysData(String date) {
+    public List<TodaysData> getTodaysDataFromAzanTiming(String date) {
         List<TodaysData> todaysDataList = new ArrayList<>();
 
         SQLiteDatabase db = this.getWritableDatabase();
@@ -352,6 +315,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 todayTimings.setDate(cursor.getString(0));
                 todayTimings.setAzan(cursor.getString(1));
                 todayTimings.setActualTime(cursor.getString(2));
+                todayTimings.setNotiType(cursor.getString(3));
+                todayTimings.setTunePath(cursor.getString(4));
 
                 // Adding contact to list
                 todayTimingsList.add(todayTimings);
@@ -364,23 +329,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public String getNearestTime(String time) {
         String nextTime = "";
         SQLiteDatabase db = this.getWritableDatabase();
-        String query = "WITH RECURSIVE today(Timing) AS (" +
+        String query = "WITH RECURSIVE today(Time) AS (" +
                 " VALUES('')" +
                 " UNION ALL " +
-                " SELECT today_timimgs.Timing" +
+                " SELECT today_timimgs.Time" +
                 " FROM today_timimgs, today WHERE '" + time +
-                "' < today_timimgs.Timing And '" + time +
-                "' > today.Timing)" +
+                "' < today_timimgs.Time And '" + time +
+                "' > today.Time)" +
                 " SELECT * FROM today " +
-                " Where Timing <> ''" +
-                " Order by Timing" +
+                " Where Time <> ''" +
+                " Order by Time" +
                 " LIMIT 1";
 
         Cursor cursor = db.rawQuery(query, null);
 
         while (cursor.moveToNext()) {
             nextTime = cursor.getString(0);
-
         }
         return nextTime;
     }
@@ -416,20 +380,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
     /* Get Actual Times After DTS And Manual Correction With join Functions */
-    public List<MainData> getAlarmTriggerTime() {
+    public List<MainData> getAlarmTriggerTime(String date) {
         List<MainData> alarmTriggerList = new ArrayList<>();
 
         SQLiteDatabase db = this.getWritableDatabase();
 
-        String query = "SELECT MD.Azan, " +
-                " Time(Time(MD.Time, CASE WHEN MC.Time >= 0 THEN '+'  ELSE '' END || MC.Time || ' minute')" +
-                ", CASE WHEN DTS.Value >= 0 THEN '+'  ELSE '' END  || DTS.Value || ' minute') AS AT," +
-                " NT.NotiType AS NotiType, TP.TPath" +
-                " FROM today_timimgs MD" +
-                " LEFT JOIN ManualCorrection MC ON MD.Azan = MC.Azan" +
-                " CROSS JOIN day_time_saving DTS" +
-                " LEFT JOIN NotiType NT ON MD.Azan = NT.Azan" +
-                " CROSS JOIN TunePath TP";
+        String query = "SELECT TT.Azan, " +
+                " time(time(TT.Time, CASE WHEN MC.Time >= 0 THEN '+'  ELSE '' END || MC.Time || ' minute')" +
+                ", CASE WHEN DTS.Value >= 0 THEN '+'  ELSE '' END  || DTS.Value || ' minute') AS AT, " +
+                " TT.NotiType, TT.TunePath " +
+                " FROM today_timimgs TT " +
+                " LEFT JOIN ManualCorrection MC ON TT.Azan = MC.Azan" +
+                " CROSS JOIN DTS DTS" +
+//                " LEFT JOIN NotiType TT ON TT.Azan = NT.Azan" +
+                " WHERE TT.Date = '" + date + "'";
 
         Cursor cursor = db.rawQuery(query, null);
 
@@ -437,11 +401,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             do {
                 MainData mainData = new MainData();
 
-                //    mainData.setDate(cursor.getString(0));
                 mainData.setAzan(cursor.getString(0));
                 mainData.setTime(cursor.getString(1));
                 mainData.setNotiType(cursor.getString(2));
                 mainData.setTunePath(cursor.getString(3));
+
+                alarmTriggerList.add(mainData);
             }
             while (cursor.moveToNext());
         }

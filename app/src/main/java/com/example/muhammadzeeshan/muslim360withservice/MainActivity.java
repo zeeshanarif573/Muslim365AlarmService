@@ -2,9 +2,13 @@ package com.example.muhammadzeeshan.muslim360withservice;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 import com.example.muhammadzeeshan.muslim360withservice.Service.AlarmSchedular;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -13,12 +17,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        String folder = Environment.getExternalStorageDirectory() + "/Azaan Ringtones/beep.mp3";
+        File targetRingtone = new File(folder);
+        Log.e("tone", targetRingtone.getAbsolutePath());
+
         Intent intent = new Intent(this, AlarmSchedular.class);
-        intent.putExtra("DataFilePath", "abc.json");
-        intent.putExtra("DTSValue", "0");
-        intent.putExtra("MCJson", "{\"Fajr\": \"05:53 (PKT)\",\"Dhuhr\": \"12:45 (PKT)\",\"Asr\": \"16:42 (PKT)\",\"Maghrib\": \"18:19 (PKT)\",\"Isha\": \"19:32 (PKT)\"}");
-        intent.putExtra("NotitypeJson", "{\"Fajr\": \"1\",\"Dhuhr\": \"1\",\"Asr\": \"1\",\"Maghrib\": \"1\",\"Isha\": \"1\"}");
-        intent.putExtra("TunePath", "xyz.json");
+        intent.putExtra("adhan_timing_json", Environment.getExternalStorageDirectory() + "/Azaan Ringtones/AdhanTimings.json");
+        intent.putExtra("mc_timing_json", Environment.getExternalStorageDirectory() + "/Azaan Ringtones/ManualCorrection.json");
+        intent.putExtra("dts_json", Environment.getExternalStorageDirectory() + "/Azaan Ringtones/DTS.json");
+        intent.putExtra("notitype_json", Environment.getExternalStorageDirectory() + "/Azaan Ringtones/NotiType.json");
         startService(intent);
     }
 

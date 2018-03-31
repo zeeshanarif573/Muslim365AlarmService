@@ -2,26 +2,26 @@
   {
     "Azan": "Fajr",
     "Type": "1",
-    "TPath": "ABC"
+    "TPath": "/storage/emulated/0/Azaan Ringtones/fajar_alarm.mp3"
   },
   {
     "Azan": "Dhuhr",
-    "Type": "1",
-    "TPath": "ABC"
+    "Type": "0",
+    "TPath": "/storage/emulated/0/Azaan Ringtones/dhuhr_azan.mp3"
   },
   {
     "Azan": "Asr",
     "Type": "1",
-    "TPath": "ABC"
+    "TPath": "/storage/emulated/0/Azaan Ringtones/beep.mp3"
   },
   {
     "Azan": "Maghrib",
-    "Type": "1",
-    "TPath": "ABC"
+    "Type": "0",
+    "TPath": "/storage/emulated/0/Azaan Ringtones/engagetune.mp3"
   },
   {
     "Azan": "Isha",
-    "Type": "0",
-    "TPath": "ABC"
+    "Type": "1",
+    "TPath": "/storage/emulated/0/Azaan Ringtones/notification.mp3"
   }
 ]

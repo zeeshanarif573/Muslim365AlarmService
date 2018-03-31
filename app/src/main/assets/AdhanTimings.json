@@ -368,26 +368,26 @@
       "timings": {
         "Fajr": "09:40 (PKT)",
         "Sunrise": "06:55 (PKT)",
-        "Dhuhr": "17:24 (PKT)",
-        "Asr": "16:30 (PKT)",
-        "Sunset": "09:32 (PKT)",
-        "Maghrib": "18:58 (PKT)",
-        "Isha": "16:09 (PKT)",
+        "Dhuhr": "09:12 (PKT)",
+        "Asr": "09:00 (PKT)",
+        "Sunset": "09:00 (PKT)",
+        "Maghrib": "13:19 (PKT)",
+        "Isha": "15:24 (PKT)",
         "Imsak": "05:29 (PKT)",
-        "Midnight": "00:44 (PKT)"
+        "Midnight": "08:44 (PKT)"
       }
     },
     {
       "timings": {
         "Fajr": "05:20 (PKT)",
         "Sunrise": "06:55 (PKT)",
-        "Dhuhr": "12:34 (PKT)",
+        "Dhuhr": "05:22 (PKT)",
         "Asr": "12:35 (PKT)",
         "Sunset": "18:32 (PKT)",
         "Maghrib": "18:36 (PKT)",
         "Isha": "12:39 (PKT)",
         "Imsak": "05:29 (PKT)",
-        "Midnight": "00:44 (PKT)"
+        "Midnight": "11:44 (PKT)"
       }
     }
   ]

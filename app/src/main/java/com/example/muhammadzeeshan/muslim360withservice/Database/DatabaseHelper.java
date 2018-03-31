@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.example.muhammadzeeshan.muslim360withservice.Model.AlarmParameters;
 import com.example.muhammadzeeshan.muslim360withservice.Model.MainData;
 import com.example.muhammadzeeshan.muslim360withservice.Model.ManualCorrection;
 import com.example.muhammadzeeshan.muslim360withservice.Model.NotiType;
@@ -348,6 +349,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         return nextTime;
     }
+
+
+    public AlarmParameters getAlarmParams(String time) {
+
+        AlarmParameters alarmParameters = new AlarmParameters();
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "Select NotiType,TunePath from today_timimgs where Time ='" + time + "'";
+
+        Cursor cursor = db.rawQuery(query, null);
+
+        while (cursor.moveToNext()) {
+            alarmParameters.setNotiType(cursor.getString(0));
+            alarmParameters.setTunePath(cursor.getString(1));
+
+        }
+        return alarmParameters;
+    }
+
 
     public void deleteTodayAzanTimings() {
         SQLiteDatabase db = this.getWritableDatabase();

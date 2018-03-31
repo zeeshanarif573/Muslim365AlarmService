@@ -8,15 +8,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.example.muhammadzeeshan.muslim360withservice.MainActivity;
 import com.example.muhammadzeeshan.muslim360withservice.MyApp;
 import com.example.muhammadzeeshan.muslim360withservice.R;
 import com.example.muhammadzeeshan.muslim360withservice.broadcast_receiver.NotificationDismissedReceiver;
+
+import java.io.File;
 
 /**
  * Created by Muhammad Zeeshan on 3/26/2018.
@@ -40,9 +43,22 @@ public class AlarmNotificationSoundService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+    }
 
-        mediaPlayer = MediaPlayer.create(this, R.raw.beep);
-        mediaPlayer.setLooping(true);
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+
+        String notiType = intent.getStringExtra("notiType");
+        String tunePath = intent.getStringExtra("tunePath");
+
+        File targetRingtone = new File(tunePath);
+
+        if(notiType.equalsIgnoreCase("1")){
+            mediaPlayer = MediaPlayer.create(this, Uri.parse(targetRingtone.getAbsolutePath()));
+            mediaPlayer.setLooping(true);
+            mediaPlayer.start();
+        }
+
 
         Log.e("Service", "OnCreate");
         broadCast = new ScreenOnOffReceiver();
@@ -52,6 +68,8 @@ public class AlarmNotificationSoundService extends Service {
         this.registerReceiver(broadCast, filter);
 
         sendNotification("Wake Up! Wake Up! Alarm started!!");
+
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
@@ -73,7 +91,6 @@ public class AlarmNotificationSoundService extends Service {
 
     private void sendNotification(String msg) {
 
-        mediaPlayer.start();
         alarmNotificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
 
         //get pending intent

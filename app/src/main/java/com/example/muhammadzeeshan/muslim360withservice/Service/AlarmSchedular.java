@@ -1,5 +1,6 @@
 package com.example.muhammadzeeshan.muslim360withservice.Service;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -9,19 +10,20 @@ import android.util.Log;
 import com.example.muhammadzeeshan.muslim360withservice.Alarm;
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseHelper;
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseUtils;
+import com.example.muhammadzeeshan.muslim360withservice.Model.AlarmParameters;
 import com.example.muhammadzeeshan.muslim360withservice.Model.MainData;
 import com.example.muhammadzeeshan.muslim360withservice.Model.ManualCorrection;
 import com.example.muhammadzeeshan.muslim360withservice.Model.NotiType;
 import com.example.muhammadzeeshan.muslim360withservice.Model.Timings;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodayTimings;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodaysData;
-import com.example.muhammadzeeshan.muslim360withservice.SharedPreferenceHandler;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,9 +37,8 @@ import java.util.List;
 
 public class AlarmSchedular extends Service {
 
-    String DataFilePath, DtsValue, McJson, NotitypeJson, TunePath, DTSValue;
+    String AdhanTimingJsonPath, ManualCorrectionJsonPath, DtsJsonPath, NotitypeJsonPath;
     DatabaseHelper databaseHelper;
-    SharedPreferenceHandler sharedPreferenceHandler;
     String strTime;
 
     @Nullable
@@ -52,28 +53,21 @@ public class AlarmSchedular extends Service {
         Log.e("AlarmSchedular", "OnCreate");
 
         databaseHelper = new DatabaseHelper(this);
-        sharedPreferenceHandler = new SharedPreferenceHandler(this);
     }
 
+    @SuppressLint("LongLogTag")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e("AlarmSchedular", "onStartCommand");
 
         if (intent.getExtras() != null) {
-            DataFilePath = intent.getStringExtra("DataFilePath");
-            DtsValue = intent.getStringExtra("DTSValue");
-            McJson = intent.getStringExtra("MCJson");
-            NotitypeJson = intent.getStringExtra("NotitypeJson");
-            TunePath = intent.getStringExtra("TunePath");
+            AdhanTimingJsonPath = intent.getStringExtra("adhan_timing_json");
+            ManualCorrectionJsonPath = intent.getStringExtra("mc_timing_json");
+            DtsJsonPath = intent.getStringExtra("dts_json");
+            NotitypeJsonPath = intent.getStringExtra("notitype_json");
         }
 
         resetAllValuesAndData();
-
-        sharedPreferenceHandler.setDtsValue(DtsValue);
-        sharedPreferenceHandler.setTunePath(TunePath);
-
-        Log.e("DTSValue", sharedPreferenceHandler.getDtsValue());
-        Log.e("TunePath", sharedPreferenceHandler.getTunePath());
 
         loadAllTimingsJsonFileAndSaveIntoDatabase();
         getTodayDataFromMasterAndSaveInTodayData();
@@ -92,6 +86,7 @@ public class AlarmSchedular extends Service {
         //Get Nearest Next Time.............................
         String nearestTime = databaseHelper.getNearestTime(strTime);
 
+        //If Next Alarm Exist in Todays Date then Setup ALarm.........................
         if (!nearestTime.isEmpty()) {
 
             Log.e("If", "Running...");
@@ -118,77 +113,99 @@ public class AlarmSchedular extends Service {
             cal.set(Integer.parseInt(Year), Integer.parseInt(Month), Integer.parseInt(Date), Integer.parseInt(hour),
                     Integer.parseInt(minute), 00);
 
+            AlarmParameters alarmParameters = databaseHelper.getAlarmParams(nearestTime);
+
+            Log.e("alarmPArams", alarmParameters.getNotiType() + "\n" + alarmParameters.getTunePath());
+
             Alarm alarm = new Alarm();
-            alarm.setAlarm(cal, nearestTime, this, 0);
+            alarm.setAlarm(cal, nearestTime, this, 0, alarmParameters);
 
-        } else {
+            stopSelf();
 
-            //Get Only Current Date....................
+        }
+
+        //Else Set Next Alarm of Fajar on Next Day.............................
+        else {
+            Log.e("Else", "Running");
+
+            //Delete Previous Data of today Date and Set Data of next Day......................
+            databaseHelper.deleteTodayAzanTimings();
+            getNextDayDataFromMasterAndSaveInTodayData();
+
             Calendar onlyDate = Calendar.getInstance();
             String date = String.valueOf(onlyDate.get(Calendar.DAY_OF_MONTH));
             int index = Integer.parseInt(date) + 1;
 
-            //Split Date into years, month and date.............
-            String[] splitYear = strDate.split("\\/");
-            String Year = splitYear[0];
-            String Month = splitYear[1];
+            String nextdate = getNextDate();
+            ArrayList<TodayTimings> todayTimingsArrayList = new ArrayList<>();
 
-            Calendar calDate = Calendar.getInstance();
-            String nextdate = calDate.get(Calendar.YEAR) + "/" + calDate.get(Calendar.MONTH) + "/" + index;
+            List<MainData> mainDataList = databaseHelper.getAlarmTriggerTime(nextdate);
 
-            List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(String.valueOf(index));
+            //Get Data from Today Table After Join Query......................................
+            if (mainDataList.size() > 0) {
+                for (MainData mainData : mainDataList) {
 
-            if (getTodayDataList.size() > 0) {
+                    String AzanTime = mainData.getTime().substring(0, 5);
 
-                for (int i = 0; i < getTodayDataList.size(); i++) {
+                    TodayTimings todayTimings = new TodayTimings(nextdate, mainData.getAzan(), AzanTime, mainData.getNotiType(), mainData.getTunePath());
+                    todayTimingsArrayList.add(todayTimings);
 
-                    ArrayList<NotiType> notiTypeArrayList = prepareNotiTypeList();
-                    TodaysData todaysData = getTodayDataList.get(i);
-
-                    String FajrTime = todaysData.getFajr();
-                    nearestTime = FajrTime;
+                    String Fajar = mainDataList.get(0).getTime();
+                    nearestTime = Fajar;
 
                     databaseHelper.deleteTodayAzanTimings();
-
-                    List<TodayTimings> todayTimingsList = new ArrayList<>();
-
-                    todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(0).getAzan(), todaysData.getFajr(), notiTypeArrayList.get(0).getType(), notiTypeArrayList.get(0).getTunePath()));
-                    todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(1).getAzan(), todaysData.getDhuhr(), notiTypeArrayList.get(1).getType(), notiTypeArrayList.get(1).getTunePath()));
-                    todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(2).getAzan(), todaysData.getAsr(), notiTypeArrayList.get(2).getType(), notiTypeArrayList.get(2).getTunePath()));
-                    todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(3).getAzan(), todaysData.getMaghrib(), notiTypeArrayList.get(3).getType(), notiTypeArrayList.get(3).getTunePath()));
-                    todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(4).getAzan(), todaysData.getIsha(), notiTypeArrayList.get(4).getType(), notiTypeArrayList.get(4).getTunePath()));
-
-
-                    databaseHelper.insertIntoTodayTiming(todayTimingsList);
-                    DatabaseUtils.peekAllDataFromTodayTimimgs(this);
-
-                    //Split Time into Hours and Minutes...................
-                    String[] splitTime = nearestTime.split(" ");
-                    String splitPKT = splitTime[0];
-                    Log.e("Next Nearest Alarm", "Split on ' ' " + splitPKT);
-
-                    String[] splitHour = splitPKT.split("\\:");
-                    String hour = splitHour[0];
-                    String minute = splitHour[1];
-                    Log.e("Split time on colon", hour + "/" + minute);
-
-
-                    //Set Alarm at Nearest date and time...............
-                    Calendar cal = Calendar.getInstance();
-                    cal.set(Integer.parseInt(Year), Integer.parseInt(Month), index, Integer.parseInt(hour),
-                            Integer.parseInt(minute), 00);
-
-                    Log.e("Next Day Alarm", "Next Alarm Set at : " + index + " - " + Month + " - " + Year + ":" + nearestTime);
-
-                    Alarm alarm = new Alarm();
-                    alarm.setAlarm(cal, nearestTime, this, 0);
+                    databaseHelper.insertIntoTodayTiming(todayTimingsArrayList);
                 }
 
+                //Peek Data After Data Updated to next date in Today Table.........................
+                Log.e("Data In Today Timing Status", " Updated");
+                DatabaseUtils.peekAllDataFromTodayTimimgs(this);
+
+                //Split Time into Hours and Minutes...................
+                String[] splitTime = nearestTime.split(" ");
+                String splitPKT = splitTime[0];
+
+                String[] splitHour = splitPKT.split("\\:");
+                String hour = splitHour[0];
+                String minute = splitHour[1];
+
+                //Split Date into years, month and date.............
+                String[] splitYear = strDate.split("\\/");
+                String Year = splitYear[0];
+                String Month = splitYear[1];
+
+                String SplitFajrTime = nearestTime.substring(0, 5);
+                String FajrTime = SplitFajrTime;
+
+                //Set Alarm at Nearest date and time...............
+                Calendar cal = Calendar.getInstance();
+                cal.set(Integer.parseInt(Year), Integer.parseInt(Month), index, Integer.parseInt(hour),
+                        Integer.parseInt(minute), 00);
+
+                AlarmParameters alarmParameters = databaseHelper.getAlarmParams(FajrTime);
+
+                Log.e("alarmPArams", alarmParameters.getNotiType() + "\n" + alarmParameters.getTunePath());
+
+                Alarm alarm = new Alarm();
+                alarm.setAlarm(cal, FajrTime, this, 0, alarmParameters);
+
+                stopSelf();
+
+                Log.e("Timing Updated", "Get Data After Main Data Inserted");
+
             } else {
-                Log.e("TodaysData", "Empty");
+                Log.e("AgentMainData", "Empty");
             }
         }
+
         return super.onStartCommand(intent, flags, startId);
+    }
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.e("Service", "Destroy");
     }
 
     private void getDataFromMainDataAndInsertIntoTodayTiming() {
@@ -248,6 +265,38 @@ public class AlarmSchedular extends Service {
         }
     }
 
+    private String getNextDate() {
+        //Get Only Next Date....................
+        Calendar onlyDate = Calendar.getInstance();
+        String date = String.valueOf(onlyDate.get(Calendar.DAY_OF_MONTH));
+        int index = Integer.parseInt(date) + 1;
+
+        Calendar calDate = Calendar.getInstance();
+        String nextdate = calDate.get(Calendar.YEAR) + "/" + calDate.get(Calendar.MONTH) + "/" + index;
+
+        return nextdate;
+    }
+
+    private int getOnlyDate() {
+
+        //Get Only Next Date....................
+        Calendar onlyDate = Calendar.getInstance();
+        String date = String.valueOf(onlyDate.get(Calendar.DAY_OF_MONTH));
+        int index = Integer.parseInt(date);
+
+        return index;
+    }
+
+    private int getOnlyNextDate() {
+
+        //Get Only Next Date....................
+        Calendar onlyDate = Calendar.getInstance();
+        String date = String.valueOf(onlyDate.get(Calendar.DAY_OF_MONTH));
+        int index = Integer.parseInt(date) + 1;
+
+        return index;
+    }
+
     private String getAlarmTime(String strTime, List<MainData> mainDataList) {
         Log.e("StrTime", strTime);
         SimpleDateFormat parser = new SimpleDateFormat("HH:mm");
@@ -286,13 +335,11 @@ public class AlarmSchedular extends Service {
         return "";
     }
 
+
     private void resetAllValuesAndData() {
 
         databaseHelper.deleteTodayAzanTimings();
         DatabaseUtils.peekAllDataFromTodayTimimgs(this);
-
-        sharedPreferenceHandler.setDtsValue("");
-        sharedPreferenceHandler.setTunePath("");
     }
 
     private void loadAllTimingsJsonFileAndSaveIntoDatabase() {
@@ -363,9 +410,8 @@ public class AlarmSchedular extends Service {
             JSONArray jsonArray = new JSONArray(jsonString);
 
             JSONObject getData = jsonArray.getJSONObject(0);
-            DTSValue = getData.getString("Value");
 
-            databaseHelper.insertIntoDTS(DTSValue);
+            databaseHelper.insertIntoDTS(getData.getString("Value"));
             DatabaseUtils.peekDataFromDTS(this);
 
         } catch (Exception e) {
@@ -426,11 +472,9 @@ public class AlarmSchedular extends Service {
         String strDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
         Log.e("Date..", strDate);
 
-        //Get Only Current Date....................
-        Calendar onlyDate = Calendar.getInstance();
-        String date = String.valueOf(onlyDate.get(Calendar.DAY_OF_MONTH));
+        int date = getOnlyDate();
 
-        List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(date);
+        List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(String.valueOf(date));
 
         if (getTodayDataList.size() > 0) {
 
@@ -470,12 +514,56 @@ public class AlarmSchedular extends Service {
         }
     }
 
+    private void getNextDayDataFromMasterAndSaveInTodayData() {
+
+        String nextDate = getNextDate();
+        int date = getOnlyNextDate();
+
+        List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(String.valueOf(date));
+
+        if (getTodayDataList.size() > 0) {
+
+            for (int i = 0; i < getTodayDataList.size(); i++) {
+
+                ArrayList<NotiType> notiTypeArrayList = prepareNotiTypeList();
+                TodaysData todaysData = getTodayDataList.get(i);
+
+                String SplitFajrTime[] = todaysData.getFajr().split(" ");
+                String SplitDhuhrTime[] = todaysData.getDhuhr().split(" ");
+                String SplitAsrTime[] = todaysData.getAsr().split(" ");
+                String SplitMaghribTime[] = todaysData.getMaghrib().split(" ");
+                String SplitIshaTime[] = todaysData.getIsha().split(" ");
+
+                String FajrTime = SplitFajrTime[0];
+                String DhuhrTime = SplitDhuhrTime[0];
+                String AsrTime = SplitAsrTime[0];
+                String MaghribTime = SplitMaghribTime[0];
+                String IshaTime = SplitIshaTime[0];
+
+                List<TodayTimings> todayTimingsList = new ArrayList<>();
+
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(0).getAzan(), FajrTime, notiTypeArrayList.get(0).getType(), notiTypeArrayList.get(0).getTunePath()));
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(1).getAzan(), DhuhrTime, notiTypeArrayList.get(1).getType(), notiTypeArrayList.get(1).getTunePath()));
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(2).getAzan(), AsrTime, notiTypeArrayList.get(2).getType(), notiTypeArrayList.get(2).getTunePath()));
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(3).getAzan(), MaghribTime, notiTypeArrayList.get(3).getType(), notiTypeArrayList.get(3).getTunePath()));
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(4).getAzan(), IshaTime, notiTypeArrayList.get(4).getType(), notiTypeArrayList.get(4).getTunePath()));
+
+
+                databaseHelper.insertIntoTodayTiming(todayTimingsList);
+            }
+
+        } else {
+            Log.e("TodaysData", "Empty");
+        }
+    }
+
 
     //Load JSON's...............................................
     private String loadJSONFromAzanTimings() {
         String json = null;
         try {
-            InputStream is = this.getAssets().open("AdhanTimings.json");
+            File file = new File(AdhanTimingJsonPath);
+            FileInputStream is = new FileInputStream(file);
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
@@ -491,7 +579,8 @@ public class AlarmSchedular extends Service {
     private String loadManualCorrectionJSON() {
         String json = null;
         try {
-            InputStream is = this.getAssets().open("ManualCorrection.json");
+            File file = new File(ManualCorrectionJsonPath);
+            FileInputStream is = new FileInputStream(file);
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
@@ -507,7 +596,8 @@ public class AlarmSchedular extends Service {
     private String loadDTSJSON() {
         String json = null;
         try {
-            InputStream is = this.getAssets().open("DTS.json");
+            File file = new File(DtsJsonPath);
+            FileInputStream is = new FileInputStream(file);
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
@@ -523,7 +613,8 @@ public class AlarmSchedular extends Service {
     private String loadNotiTypeJSON() {
         String json = null;
         try {
-            InputStream is = this.getAssets().open("NotiType.json");
+            File file = new File(NotitypeJsonPath);
+            FileInputStream is = new FileInputStream(file);
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);

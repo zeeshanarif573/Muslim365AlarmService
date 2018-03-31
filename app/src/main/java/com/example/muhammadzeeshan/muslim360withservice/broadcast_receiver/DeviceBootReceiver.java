@@ -7,12 +7,20 @@ import android.content.Intent;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.muhammadzeeshan.muslim360withservice.Alarm;
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseHelper;
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseUtils;
+import com.example.muhammadzeeshan.muslim360withservice.Model.AlarmParameters;
+import com.example.muhammadzeeshan.muslim360withservice.Model.MainData;
+import com.example.muhammadzeeshan.muslim360withservice.Model.NotiType;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodayTimings;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodaysData;
-import com.example.muhammadzeeshan.muslim360withservice.Alarm;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -24,16 +32,15 @@ import java.util.List;
 public class DeviceBootReceiver extends BroadcastReceiver {
 
     Alarm setAlarm = new Alarm();
-    String nextNearestAlarm;
     DatabaseHelper databaseHelper;
-    String FajrTime;
     int index;
-    String currentDate, currentTime;
+    Context context;
 
     @SuppressLint("LongLogTag")
     @Override
     public void onReceive(final Context context, Intent intent) {
 
+        this.context = context;
         databaseHelper = new DatabaseHelper(context);
 
         if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
@@ -42,27 +49,10 @@ public class DeviceBootReceiver extends BroadcastReceiver {
 
             //Get Whole Current Date....................
             Calendar getDate = Calendar.getInstance();
-            currentDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
-
+            String currentDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
             Log.e("Boot Current Date", currentDate);
 
-            //Get Current Time................................
-            Calendar getTime = Calendar.getInstance();
-            if ((getTime.get(Calendar.HOUR_OF_DAY) < 10) && (getTime.get(Calendar.MINUTE) < 10)) {
-                currentTime = "0" + getTime.get(Calendar.HOUR_OF_DAY) + ":" + "0" + getTime.get(Calendar.MINUTE);
-                Log.e("Boot Reciever Time..", currentTime);
-
-            } else if (getTime.get(Calendar.HOUR_OF_DAY) < 10) {
-                currentTime = "0" + getTime.get(Calendar.HOUR_OF_DAY) + ":" + getTime.get(Calendar.MINUTE);
-                Log.e("Boot Reciever Time..", currentTime);
-            } else if (getTime.get(Calendar.MINUTE) < 10) {
-                currentTime = getTime.get(Calendar.HOUR_OF_DAY) + ":" + "0" + getTime.get(Calendar.MINUTE);
-                Log.e("Boot Reciever Time..", currentTime);
-            } else {
-                currentTime = getTime.get(Calendar.HOUR_OF_DAY) + ":" + getTime.get(Calendar.MINUTE);
-                Log.e("Boot Reciever Time..", currentTime);
-            }
-
+            String currentTime = getCurrentTime();
 
             if (databaseHelper.getDateCount(currentDate) > 0) {
 
@@ -73,34 +63,15 @@ public class DeviceBootReceiver extends BroadcastReceiver {
                 Log.e("Running Boot", "else");
 
                 databaseHelper.deleteTodayAzanTimings();
-                DatabaseUtils.peekAllDataFromTodayTimimgs(context);
-
-                List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(String.valueOf(getDate.get(Calendar.DAY_OF_MONTH)));
-                Log.e("listSize", getTodayDataList.size() + "");
-
-//                if (getTodayDataList.size() > 0) {
-//                    TodaysData todaysData = getTodayDataList.get(0);
-//
-//                    List<TodayTimings> todayTimingsList = new ArrayList<>();
-//                    todayTimingsList.add(new TodayTimings(currentDate, "Fajar", todaysData.getFajr()));
-//                    todayTimingsList.add(new TodayTimings(currentDate, "Dhuhr", todaysData.getDhuhr()));
-//                    todayTimingsList.add(new TodayTimings(currentDate, "Asr", todaysData.getAsr()));
-//                    todayTimingsList.add(new TodayTimings(currentDate, "Maghrib", todaysData.getMaghrib()));
-//                    todayTimingsList.add(new TodayTimings(currentDate, "Isha", todaysData.getIsha()));
-//
-//                    databaseHelper.insertIntoTodayTiming(todayTimingsList);
-//                    DatabaseUtils.peekAllDataFromTodayTimimgs(context);
-//
-//                    setupAlarm2(context, currentDate, currentTime, 100);
-//                }
+                setupAlarm2(context, currentDate, currentTime, 100);
             }
-
         }
+
     }
 
+    @SuppressLint("LongLogTag")
     private void setupAlarm2(Context context, String strDate, String currentTime, int requestCode) {
 
-        DatabaseHelper databaseHelper = new DatabaseHelper(context);
         Log.e("Intent: ", "nearest tIme: " + currentTime);
         Log.e("Intent: ", "request code: " + requestCode);
         requestCode++;
@@ -111,129 +82,8 @@ public class DeviceBootReceiver extends BroadcastReceiver {
         String Month = splitYear[1];
         String Date = splitYear[2];
 
-        int date = Integer.parseInt(Date);
-
-          //Get Nearest Next Time.............................
-//        nextNearestAlarm = databaseHelper.getNearestTime(currentTime);
-//
-//        if (!nextNearestAlarm.isEmpty()) {
-//
-//            Log.e("Next Nearest Alarm", nextNearestAlarm);
-//
-//            //Split Time into Hours and Minutes...................
-//            String[] splitTime = nextNearestAlarm.split(" ");
-//            String splitPKT = splitTime[0];
-//            Log.e("Next Nearest Alarm", "Split on ' ' " + splitPKT);
-//
-//            String[] splitHour = splitPKT.split("\\:");
-//            String hour = splitHour[0];
-//            String minute = splitHour[1];
-//            Log.e("Split time on colon", hour + "/" + minute);
-//
-//
-//            //Set Alarm at Nearest date and time...............
-//            Calendar cal = Calendar.getInstance();
-//            cal.set(Integer.parseInt(Year), Integer.parseInt(Month), Integer.parseInt(Date),
-//                    Integer.parseInt(hour), Integer.parseInt(minute), 00);
-//            setAlarm.setAlarm(cal, nextNearestAlarm, context, requestCode);
-//
-//        } else {
-//            Log.e("Runing", "else");
-//            index = date + 1;
-//
-//            Calendar getDate = Calendar.getInstance();
-//            String nextdate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" +index;
-//
-//
-//            List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(String.valueOf(index));
-//
-//            Log.e("listSize", getTodayDataList.size() + "");
-//
-//            if (getTodayDataList.size() > 0) {
-//
-//                TodaysData todaysData = getTodayDataList.get(0);
-//
-//                FajrTime = todaysData.getFajr();
-//                nextNearestAlarm = FajrTime;
-//
-//                Log.e("FajarTime", nextNearestAlarm);
-//
-//                databaseHelper.deleteTodayAzanTimings();
-//                DatabaseUtils.peekAllDataFromTodayTimimgs(context);
-//
-//                List<TodayTimings> todayTimingsList = new ArrayList<>();
-//                todayTimingsList.add(new TodayTimings(nextdate, "Fajar", todaysData.getFajr(), "0"));
-//                todayTimingsList.add(new TodayTimings(nextdate, "Dhuhr", todaysData.getDhuhr(), "0"));
-//                todayTimingsList.add(new TodayTimings(nextdate, "Asr", todaysData.getAsr(), "0"));
-//                todayTimingsList.add(new TodayTimings(nextdate, "Maghrib", todaysData.getMaghrib(), "0"));
-//                todayTimingsList.add(new TodayTimings(nextdate, "Isha", todaysData.getIsha(), "0"));
-//
-//                databaseHelper.insertIntoTodayTiming(todayTimingsList);
-//                DatabaseUtils.peekAllDataFromTodayTimimgs(context);
-//
-//                Log.e("Next Nearest Alarm", nextNearestAlarm);
-//
-//                //Split Time into Hours and Minutes...................
-//                String[] splitTime = nextNearestAlarm.split(" ");
-//                String splitPKT = splitTime[0];
-//                Log.e("Next Nearest Alarm", "Split on ' ' " + splitPKT);
-//
-//                String[] splitHour = splitPKT.split("\\:");
-//                String hour = splitHour[0];
-//                String minute = splitHour[1];
-//                Log.e("Split time on colon", hour + "/" + minute);
-//
-//
-//                //Set Alarm at Nearest date and time...............
-//                Calendar cal = Calendar.getInstance();
-//                cal.set(Integer.parseInt(Year), Integer.parseInt(Month), index, Integer.parseInt(hour),
-//                        Integer.parseInt(minute), 00);
-//
-//                Log.e("else date", cal.get(Calendar.YEAR) + "/" + cal.get(Calendar.MONTH) + "/" + cal.get(Calendar.DAY_OF_MONTH) + "");
-//
-//                Log.e("Next Day Alarm", "Next Alarm Set at : " + index + " - " + Month + " - " + Year + ":" + nextNearestAlarm);
-//                setAlarm.setAlarm(cal, nextNearestAlarm, context, requestCode);
-//            } else {
-//                Log.e("TodaysData", "Empty");
-//            }
-//        }
-
-    }
-
-    /*private void setupAlarm(Context context, String nearestTime, int requestCode, boolean updateStatusOrNot) {
-        String strDate, date;
-        int index;
-        String FajrTime;
-        String nextNearestAlarm;
-
-        DatabaseHelper databaseHelper = new DatabaseHelper(context);
-
-        Log.e("Intent: ", "nearest tIme: " + nearestTime);
-        Log.e("Intent: ", "request code: " + requestCode);
-        requestCode++;
-        Log.e("Next Request Code: ", "" + requestCode);
-
-        if (updateStatusOrNot)
-            databaseHelper.UpdateTodayTimingTable(nearestTime);
-
-        //Get Whole Current Date....................
-        Calendar getDate = Calendar.getInstance();
-        strDate = getDate.get(Calendar.YEAR) + "/" + getDate.get(Calendar.MONTH) + "/" + getDate.get(Calendar.DAY_OF_MONTH);
-
-        //Get Only Current Date....................
-        Calendar onlyDate = Calendar.getInstance();
-        date = String.valueOf(onlyDate.get(Calendar.DAY_OF_MONTH));
-
-        index = Integer.parseInt(date);
-
-        //Split Date into years, month and date.............
-        String[] splitYear = strDate.split("\\/");
-        String Year = splitYear[0];
-        String Month = splitYear[1];
-        String Date = splitYear[2];
-
-        //Get Nearest Next Time.............................
-        nextNearestAlarm = databaseHelper.getNearestTime(nearestTime);
+        //  Get Nearest Next Time.............................
+        String nextNearestAlarm = databaseHelper.getNearestTime(currentTime);
 
         if (!nextNearestAlarm.isEmpty()) {
 
@@ -249,73 +99,206 @@ public class DeviceBootReceiver extends BroadcastReceiver {
             String minute = splitHour[1];
             Log.e("Split time on colon", hour + "/" + minute);
 
-
             //Set Alarm at Nearest date and time...............
             Calendar cal = Calendar.getInstance();
             cal.set(Integer.parseInt(Year), Integer.parseInt(Month), Integer.parseInt(Date),
                     Integer.parseInt(hour), Integer.parseInt(minute), 00);
 
-            setAlarm.setAlarm(cal, nextNearestAlarm, context, requestCode);
+            AlarmParameters alarmParameters = databaseHelper.getAlarmParams(nextNearestAlarm);
+
+            setAlarm.setAlarm(cal, nextNearestAlarm, context, requestCode, alarmParameters);
 
         } else {
 
             Log.e("Runing", "else");
-            index = Integer.parseInt(date) + 1;
 
-            List<TodaysData> getTodayDataList = databaseHelper.getTodaysData(String.valueOf(index));
+            databaseHelper.deleteTodayAzanTimings();
+            getNextDayDataFromMasterAndSaveInTodayData();
 
-            Log.e("listSize", getTodayDataList.size() + "");
+            index = getOnlyNextDate();
+            String nextdate = getNextDate();
 
-            if (getTodayDataList.size() > 0) {
+            ArrayList<TodayTimings> todayTimingsArrayList = new ArrayList<>();
 
-                TodaysData todaysData = getTodayDataList.get(0);
+            List<MainData> mainDataList = databaseHelper.getAlarmTriggerTime(nextdate);
+            if (mainDataList.size() > 0) {
+                String nearestTime = "";
 
-                FajrTime = todaysData.getFajr();
-                nextNearestAlarm = FajrTime;
+                for (MainData mainData : mainDataList) {
 
-                Log.e("FajarTime", nextNearestAlarm);
+                    String AzanTime = mainData.getTime().substring(0, 5);
 
-                databaseHelper.deleteTodayAzanTimings();
+                    TodayTimings todayTimings = new TodayTimings(nextdate, mainData.getAzan(), AzanTime, mainData.getNotiType(), mainData.getTunePath());
+                    todayTimingsArrayList.add(todayTimings);
+
+                    String Fajar = mainDataList.get(0).getTime();
+                    nearestTime = Fajar;
+
+                    databaseHelper.deleteTodayAzanTimings();
+                    databaseHelper.insertIntoTodayTiming(todayTimingsArrayList);
+
+                }
+
+                Log.e("Data In Today Timing Status", " Updated");
                 DatabaseUtils.peekAllDataFromTodayTimimgs(context);
-
-                List<TodayTimings> todayTimingsList = new ArrayList<>();
-                todayTimingsList.add(new TodayTimings(strDate, "Fajar", todaysData.getFajr(), "0"));
-                todayTimingsList.add(new TodayTimings(strDate, "Dhuhr", todaysData.getDhuhr(), "0"));
-                todayTimingsList.add(new TodayTimings(strDate, "Asr", todaysData.getAsr(), "0"));
-                todayTimingsList.add(new TodayTimings(strDate, "Maghrib", todaysData.getMaghrib(), "0"));
-                todayTimingsList.add(new TodayTimings(strDate, "Isha", todaysData.getIsha(), "0"));
-
-                databaseHelper.insertIntoTodayTiming(todayTimingsList);
-                DatabaseUtils.peekAllDataFromTodayTimimgs(context);
-
-                Log.e("Next Nearest Alarm", nextNearestAlarm);
 
                 //Split Time into Hours and Minutes...................
-                String[] splitTime = nextNearestAlarm.split(" ");
+                String[] splitTime = nearestTime.split(" ");
                 String splitPKT = splitTime[0];
-                Log.e("Next Nearest Alarm", "Split on ' ' " + splitPKT);
 
                 String[] splitHour = splitPKT.split("\\:");
                 String hour = splitHour[0];
                 String minute = splitHour[1];
-                Log.e("Split time on colon", hour + "/" + minute);
 
+                String SplitFajrTime = nearestTime.substring(0, 5);
+                String FajrTime = SplitFajrTime;
 
                 //Set Alarm at Nearest date and time...............
                 Calendar cal = Calendar.getInstance();
                 cal.set(Integer.parseInt(Year), Integer.parseInt(Month), index, Integer.parseInt(hour),
                         Integer.parseInt(minute), 00);
 
-                Log.e("else date", cal.get(Calendar.YEAR) + "/" + cal.get(Calendar.MONTH) + "/" + cal.get(Calendar.DAY_OF_MONTH) + "");
+                AlarmParameters alarmParameters = databaseHelper.getAlarmParams(FajrTime);
 
-                Log.e("Next Day Alarm", "Next Alarm Set at : " + index + " - " + Month + " - " + Year + ":" + nextNearestAlarm);
-                setAlarm.setAlarm(cal, nextNearestAlarm, context, requestCode);
+                Alarm alarm = new Alarm();
+                alarm.setAlarm(cal, FajrTime, context, 0, alarmParameters);
 
+                Log.e("Timing Updated", "Get Data After Main Data Inserted");
 
             } else {
-                Log.e("TodaysData", "Empty");
+                Log.e("AgentMainData", "Empty");
             }
         }
-    }*/
+
+    }
+
+
+    private String getCurrentTime() {
+
+        //Get Current Time................................
+        Calendar getTime = Calendar.getInstance();
+        if ((getTime.get(Calendar.HOUR_OF_DAY) < 10) && (getTime.get(Calendar.MINUTE) < 10)) {
+            String currentTime = "0" + getTime.get(Calendar.HOUR_OF_DAY) + ":" + "0" + getTime.get(Calendar.MINUTE);
+            Log.e("Boot Reciever Time..", currentTime);
+            return currentTime;
+
+        } else if (getTime.get(Calendar.HOUR_OF_DAY) < 10) {
+            String currentTime = "0" + getTime.get(Calendar.HOUR_OF_DAY) + ":" + getTime.get(Calendar.MINUTE);
+            Log.e("Boot Reciever Time..", currentTime);
+            return currentTime;
+
+        } else if (getTime.get(Calendar.MINUTE) < 10) {
+            String currentTime = getTime.get(Calendar.HOUR_OF_DAY) + ":" + "0" + getTime.get(Calendar.MINUTE);
+            Log.e("Boot Reciever Time..", currentTime);
+            return currentTime;
+
+        } else {
+            String currentTime = getTime.get(Calendar.HOUR_OF_DAY) + ":" + getTime.get(Calendar.MINUTE);
+            Log.e("Boot Reciever Time..", currentTime);
+            return currentTime;
+        }
+    }
+
+    private int getOnlyNextDate() {
+        //Get Only Next Date....................
+        Calendar onlyDate = Calendar.getInstance();
+        String date = String.valueOf(onlyDate.get(Calendar.DAY_OF_MONTH));
+        int index = Integer.parseInt(date) + 1;
+
+        return index;
+    }
+
+    private String getNextDate() {
+        //Get Only Next Date....................
+        Calendar onlyDate = Calendar.getInstance();
+        String date = String.valueOf(onlyDate.get(Calendar.DAY_OF_MONTH));
+        int index = Integer.parseInt(date) + 1;
+
+        Calendar calDate = Calendar.getInstance();
+        String nextdate = calDate.get(Calendar.YEAR) + "/" + calDate.get(Calendar.MONTH) + "/" + index;
+
+        return nextdate;
+    }
+
+    private void getNextDayDataFromMasterAndSaveInTodayData() {
+
+        String nextDate = getNextDate();
+        int date = getOnlyNextDate();
+
+        List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(String.valueOf(date));
+
+        if (getTodayDataList.size() > 0) {
+
+            for (int i = 0; i < getTodayDataList.size(); i++) {
+
+                ArrayList<NotiType> notiTypeArrayList = prepareNotiTypeList();
+                TodaysData todaysData = getTodayDataList.get(i);
+
+                String SplitFajrTime[] = todaysData.getFajr().split(" ");
+                String SplitDhuhrTime[] = todaysData.getDhuhr().split(" ");
+                String SplitAsrTime[] = todaysData.getAsr().split(" ");
+                String SplitMaghribTime[] = todaysData.getMaghrib().split(" ");
+                String SplitIshaTime[] = todaysData.getIsha().split(" ");
+
+                String FajrTime = SplitFajrTime[0];
+                String DhuhrTime = SplitDhuhrTime[0];
+                String AsrTime = SplitAsrTime[0];
+                String MaghribTime = SplitMaghribTime[0];
+                String IshaTime = SplitIshaTime[0];
+
+                List<TodayTimings> todayTimingsList = new ArrayList<>();
+
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(0).getAzan(), FajrTime, notiTypeArrayList.get(0).getType(), notiTypeArrayList.get(0).getTunePath()));
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(1).getAzan(), DhuhrTime, notiTypeArrayList.get(1).getType(), notiTypeArrayList.get(1).getTunePath()));
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(2).getAzan(), AsrTime, notiTypeArrayList.get(2).getType(), notiTypeArrayList.get(2).getTunePath()));
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(3).getAzan(), MaghribTime, notiTypeArrayList.get(3).getType(), notiTypeArrayList.get(3).getTunePath()));
+                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(4).getAzan(), IshaTime, notiTypeArrayList.get(4).getType(), notiTypeArrayList.get(4).getTunePath()));
+
+
+                databaseHelper.insertIntoTodayTiming(todayTimingsList);
+            }
+
+        } else {
+            Log.e("TodaysData", "Empty");
+        }
+    }
+
+    private ArrayList<NotiType> prepareNotiTypeList() {
+
+        ArrayList<NotiType> notiTypeList = new ArrayList();
+        String jsonString = loadNotiTypeJSON();
+        try {
+
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject getData = jsonArray.getJSONObject(i);
+
+                NotiType notiType = new NotiType(getData.getString("Azan"), getData.getString("Type"), getData.getString("TPath"));
+                notiTypeList.add(notiType);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return notiTypeList;
+    }
+
+    private String loadNotiTypeJSON() {
+        String json = null;
+        try {
+            InputStream is = context.getAssets().open("NotiType.json");
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
+    }
 
 }

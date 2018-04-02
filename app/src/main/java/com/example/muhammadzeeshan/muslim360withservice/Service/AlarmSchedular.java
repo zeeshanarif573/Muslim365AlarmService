@@ -94,12 +94,10 @@ public class AlarmSchedular extends Service {
             //Split Time into Hours and Minutes.................
             String[] splitTime = nearestTime.split(" ");
             String splitPKT = splitTime[0];
-            Log.e("Split PKT", splitPKT);
 
             String[] splitHour = splitPKT.split("\\:");
             String hour = splitHour[0];
             String minute = splitHour[1];
-            Log.e("Split Time", hour + "_" + minute);
 
             //Split Date into years, month and date.............
             String[] splitYear = strDate.split("\\/");
@@ -115,13 +113,12 @@ public class AlarmSchedular extends Service {
 
             AlarmParameters alarmParameters = databaseHelper.getAlarmParams(nearestTime);
 
-            Log.e("alarmPArams", alarmParameters.getNotiType() + "\n" + alarmParameters.getTunePath());
+            Log.e("alarmPArams", "NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
 
             Alarm alarm = new Alarm();
             alarm.setAlarm(cal, nearestTime, this, 0, alarmParameters);
 
             stopSelf();
-
         }
 
         //Else Set Next Alarm of Fajar on Next Day.............................
@@ -184,7 +181,7 @@ public class AlarmSchedular extends Service {
 
                 AlarmParameters alarmParameters = databaseHelper.getAlarmParams(FajrTime);
 
-                Log.e("alarmPArams", alarmParameters.getNotiType() + "\n" + alarmParameters.getTunePath());
+                Log.e("alarmPArams", "NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
 
                 Alarm alarm = new Alarm();
                 alarm.setAlarm(cal, FajrTime, this, 0, alarmParameters);

@@ -31,9 +31,9 @@ import java.util.List;
 
 public class DeviceBootReceiver extends BroadcastReceiver {
 
-    Alarm setAlarm = new Alarm();
     DatabaseHelper databaseHelper;
     int index;
+    Alarm alarm;
     Context context;
 
     @SuppressLint("LongLogTag")
@@ -42,6 +42,7 @@ public class DeviceBootReceiver extends BroadcastReceiver {
 
         this.context = context;
         databaseHelper = new DatabaseHelper(context);
+        alarm = new Alarm();
 
         if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
 
@@ -105,8 +106,9 @@ public class DeviceBootReceiver extends BroadcastReceiver {
                     Integer.parseInt(hour), Integer.parseInt(minute), 00);
 
             AlarmParameters alarmParameters = databaseHelper.getAlarmParams(nextNearestAlarm);
+            Log.e("alarmPArams", "NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
 
-            setAlarm.setAlarm(cal, nextNearestAlarm, context, requestCode, alarmParameters);
+            alarm.setAlarm(cal, nextNearestAlarm, context, requestCode, alarmParameters);
 
         } else {
 
@@ -160,7 +162,8 @@ public class DeviceBootReceiver extends BroadcastReceiver {
 
                 AlarmParameters alarmParameters = databaseHelper.getAlarmParams(FajrTime);
 
-                Alarm alarm = new Alarm();
+                Log.e("alarmPArams", "NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
+
                 alarm.setAlarm(cal, FajrTime, context, 0, alarmParameters);
 
                 Log.e("Timing Updated", "Get Data After Main Data Inserted");

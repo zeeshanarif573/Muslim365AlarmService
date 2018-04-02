@@ -49,16 +49,17 @@ public class AlarmReciever extends BroadcastReceiver {
 
 
         Toast.makeText(context, "Alarm received!", Toast.LENGTH_LONG).show();
-        Intent intent1 = new Intent(context , AlarmNotificationSoundService.class);
+        Intent intent1 = new Intent(context, AlarmNotificationSoundService.class);
         intent1.putExtra("notiType", NotiType);
-        intent1.putExtra("tunePath",TunePath);
+        intent1.putExtra("tunePath", TunePath);
         context.startService(intent1);
-        setupAlarm(context, intent.getStringExtra("nearestTime"), intent.getIntExtra("reqCode", 0), true);
+
+        setupAlarm(context, intent.getStringExtra("nearestTime"), intent.getIntExtra("reqCode", 0));
     }
 
 
     @SuppressLint("LongLogTag")
-    private void setupAlarm(Context context, String nearestTime, int requestCode, boolean updateStatusOrNot) {
+    private void setupAlarm(Context context, String nearestTime, int requestCode) {
         String strDate;
 
         DatabaseHelper databaseHelper = new DatabaseHelper(context);
@@ -79,6 +80,7 @@ public class AlarmReciever extends BroadcastReceiver {
 
         //Get Nearest Next Time.............................
         nearestTime = databaseHelper.getNearestTime(strTime);
+        Log.e("Next Nearest Time: ", nearestTime);
 
         if (!nearestTime.isEmpty()) {
 
@@ -87,12 +89,11 @@ public class AlarmReciever extends BroadcastReceiver {
             //Split Time into Hours and Minutes.................
             String[] splitTime = nearestTime.split(" ");
             String splitPKT = splitTime[0];
-            Log.e("Split PKT", splitPKT);
 
-            String[] splitHour = splitPKT.split("\\:");
+
+            String[] splitHour = nearestTime.split("\\:");
             String hour = splitHour[0];
             String minute = splitHour[1];
-            Log.e("Split Time", hour + "_" + minute);
 
             //Split Date into years, month and date.............
             String[] splitYear = strDate.split("\\/");
@@ -105,10 +106,11 @@ public class AlarmReciever extends BroadcastReceiver {
             cal.set(Integer.parseInt(Year), Integer.parseInt(Month), Integer.parseInt(Date),
                     Integer.parseInt(hour), Integer.parseInt(minute), 00);
 
-            AlarmParameters alarmParameters = databaseHelper.getAlarmParams(nearestTime);;
+            AlarmParameters alarmParameters = databaseHelper.getAlarmParams(nearestTime);
 
+            Log.e("alarmPArams", "NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
             Alarm alarm = new Alarm();
-            alarm.setAlarm(cal, nearestTime, context, 0, alarmParameters);
+            alarm.setAlarm(cal, nearestTime, context, requestCode, alarmParameters);
 
         } else {
 
@@ -146,7 +148,7 @@ public class AlarmReciever extends BroadcastReceiver {
                 String[] splitTime = nearestTime.split(" ");
                 String splitPKT = splitTime[0];
 
-                String[] splitHour = splitPKT.split("\\:");
+                String[] splitHour = nearestTime.split("\\:");
                 String hour = splitHour[0];
                 String minute = splitHour[1];
 
@@ -158,14 +160,17 @@ public class AlarmReciever extends BroadcastReceiver {
                 String SplitFajrTime = nearestTime.substring(0, 5);
                 String FajrTime = SplitFajrTime;
 
+                Log.e("Fajar_Time: ", FajrTime);
+
                 //Set Alarm at Nearest date and time...............
                 Calendar cal = Calendar.getInstance();
                 cal.set(Integer.parseInt(Year), Integer.parseInt(Month), index, Integer.parseInt(hour),
                         Integer.parseInt(minute), 00);
 
-                AlarmParameters alarmParameters = databaseHelper.getAlarmParams(FajrTime);;
+                AlarmParameters alarmParameters = databaseHelper.getAlarmParams(FajrTime);
+                Log.e("alarmPArams", "NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
                 Alarm alarm = new Alarm();
-                alarm.setAlarm(cal, FajrTime, context, 0, alarmParameters);
+                alarm.setAlarm(cal, FajrTime, context, requestCode, alarmParameters);
 
                 Log.e("Timing Updated", "Get Data After Main Data Inserted");
 

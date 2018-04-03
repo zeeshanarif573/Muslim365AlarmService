@@ -121,7 +121,7 @@ public class AlarmSchedular extends Service {
             stopSelf();
         }
 
-        //Else Set Next Alarm of Fajar on Next Day.............................
+        //Else Set Next Alarm of Fajar on Next Day..............................
         else {
             Log.e("Else", "Running");
 
@@ -361,7 +361,6 @@ public class AlarmSchedular extends Service {
 
             if (azaanTimingsList.size() > 0) {
                 databaseHelper.insertIntoAzanTable(azaanTimingsList);
-//                DatabaseUtils.peekAllDataFromTimimgs(this);
             }
 
         } catch (Exception e) {

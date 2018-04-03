@@ -137,6 +137,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
 
+        db.close();
         return timingsList;
     }
 
@@ -181,6 +182,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
 
+        db.close();
         return manualCorrectionList;
     }
 
@@ -208,50 +210,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             DTS_Value = cursor.getString(0);
         }
-        return DTS_Value;
-    }
-
-
-    /* Noti_Type Table Functions */
-    public void insertIntoNotiType(List<NotiType> notiTypeList) {
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        for (NotiType notiType : notiTypeList) {
-            ContentValues values = new ContentValues();
-
-            values.put("Azan", notiType.getAzan());
-            values.put("NotiType", notiType.getType());
-            values.put("TunePath", notiType.getTunePath());
-
-            db.insert(TABLE_NOTITYPE, null, values);
-        }
-
         db.close();
-    }
-
-    public List<NotiType> getAllNotiTypeData() {
-        List<NotiType> notiTypeList = new ArrayList<NotiType>();
-
-        // Select All Query
-        String selectQuery = "SELECT * FROM " + TABLE_NOTITYPE;
-
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, null);
-
-        if (cursor.moveToFirst()) {
-            do {
-                NotiType notiType = new NotiType();
-
-                notiType.setAzan(cursor.getString(0));
-                notiType.setType(cursor.getString(1));
-                notiType.setTunePath(cursor.getString(2));
-
-                // Adding contact to list
-                notiTypeList.add(notiType);
-            } while (cursor.moveToNext());
-        }
-
-        return notiTypeList;
+        return DTS_Value;
     }
 
 
@@ -297,6 +257,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
 
+        db.close();
         return todaysDataList;
     }
 
@@ -324,6 +285,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
 
+        db.close();
         return todayTimingsList;
     }
 
@@ -347,6 +309,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         while (cursor.moveToNext()) {
             nextTime = cursor.getString(0);
         }
+
+        db.close();
         return nextTime;
     }
 
@@ -365,6 +329,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             alarmParameters.setTunePath(cursor.getString(1));
 
         }
+        db.close();
         return alarmParameters;
     }
 
@@ -394,6 +359,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int count = cursor.getCount();
 
         Log.e("Cursor Count", String.valueOf(count));
+
+        db.close();
         cursor.close();
         return count;
     }
@@ -430,6 +397,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
             while (cursor.moveToNext());
         }
+        db.close();
         return alarmTriggerList;
     }
 

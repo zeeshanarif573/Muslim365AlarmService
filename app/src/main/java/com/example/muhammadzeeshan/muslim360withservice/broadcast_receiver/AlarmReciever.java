@@ -1,41 +1,49 @@
 package com.example.muhammadzeeshan.muslim360withservice.broadcast_receiver;
 
 import android.annotation.SuppressLint;
+import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.example.muhammadzeeshan.muslim360withservice.Alarm;
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseHelper;
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseUtils;
 import com.example.muhammadzeeshan.muslim360withservice.Model.AlarmParameters;
 import com.example.muhammadzeeshan.muslim360withservice.Model.MainData;
-import com.example.muhammadzeeshan.muslim360withservice.Model.NotiType;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodayTimings;
-import com.example.muhammadzeeshan.muslim360withservice.Model.TodaysData;
+import com.example.muhammadzeeshan.muslim360withservice.R;
 import com.example.muhammadzeeshan.muslim360withservice.Service.AlarmNotificationSoundService;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import static android.content.Context.ALARM_SERVICE;
+
 /**
  * Created by Muhammad Zeeshan on 3/15/2018.
  */
-
 public class AlarmReciever extends BroadcastReceiver {
 
     DatabaseHelper databaseHelper;
     Context context;
+    String CHANNEL_ID = "my_channel_01";// The id of the channel.
+    NotificationChannel mChannel;
+    NotificationManager alarmNotificationManager;
+    MediaPlayer mediaPlayer;
+
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -44,20 +52,33 @@ public class AlarmReciever extends BroadcastReceiver {
         this.context = context;
         databaseHelper = new DatabaseHelper(context);
 
-        String NotiType = intent.getStringExtra("notiType");
-        String TunePath = intent.getStringExtra("tunePath");
+        if (intent.hasExtra("from")) {
+            Log.e("AlarmReceiver", "Notification check");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                createNotificationChannel("Please open the app to continue receiving prayer notifications");
+            } else {
+                sendNotification("Please open the app to continue receiving prayer notifications");
+            }
+        } else {
+            AlarmParameters alarmParameters = (AlarmParameters) intent.getSerializableExtra("alarmParams");
 
+            Log.e("TimeInAlarmReciever", alarmParameters.getTime() + "");
 
-        Toast.makeText(context, "Alarm received!", Toast.LENGTH_LONG).show();
-        Intent intent1 = new Intent(context, AlarmNotificationSoundService.class);
-        intent1.putExtra("notiType", NotiType);
-        intent1.putExtra("tunePath", TunePath);
-        context.startService(intent1);
+            Intent intent1 = new Intent(context, AlarmNotificationSoundService.class);
+            intent1.putExtra("alarmParams", alarmParameters);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent1);
+            } else {
+                context.startService(intent1);
+            }
 
-        setupAlarm(context, intent.getStringExtra("nearestTime"), intent.getIntExtra("reqCode", 0));
+            setupAlarm(context, alarmParameters.getTime(), intent.getIntExtra("reqCode", 1));
+        }
+
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @SuppressLint("LongLogTag")
     private void setupAlarm(Context context, String nearestTime, int requestCode) {
         String strDate;
@@ -79,7 +100,8 @@ public class AlarmReciever extends BroadcastReceiver {
         String strTime = getCurrentTime();
 
         //Get Nearest Next Time.............................
-        nearestTime = databaseHelper.getNearestTime(strTime);
+        //   nearestTime = databaseHelper.getNearestTime(strTime);
+        nearestTime = databaseHelper.getNearest(strTime);
         Log.e("Next Nearest Time: ", nearestTime);
 
         if (!nearestTime.isEmpty()) {
@@ -89,7 +111,6 @@ public class AlarmReciever extends BroadcastReceiver {
             //Split Time into Hours and Minutes.................
             String[] splitTime = nearestTime.split(" ");
             String splitPKT = splitTime[0];
-
 
             String[] splitHour = nearestTime.split("\\:");
             String hour = splitHour[0];
@@ -108,7 +129,7 @@ public class AlarmReciever extends BroadcastReceiver {
 
             AlarmParameters alarmParameters = databaseHelper.getAlarmParams(nearestTime);
 
-            Log.e("alarmPArams", "NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
+            Log.e("alarmPArams", "Alarm: " + alarmParameters.getAzanName() + "\n" + " ,NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
             Alarm alarm = new Alarm();
             alarm.setAlarm(cal, nearestTime, context, requestCode, alarmParameters);
 
@@ -168,15 +189,41 @@ public class AlarmReciever extends BroadcastReceiver {
                         Integer.parseInt(minute), 00);
 
                 AlarmParameters alarmParameters = databaseHelper.getAlarmParams(FajrTime);
-                Log.e("alarmPArams", "NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
+                Log.e("alarmPArams", "Alarm: " + alarmParameters.getAzanName() + "\n" + " ,NotiType: " + alarmParameters.getNotiType() + "\n" + "TuneType: " + alarmParameters.getTunePath());
                 Alarm alarm = new Alarm();
-                alarm.setAlarm(cal, FajrTime, context, requestCode, alarmParameters);
+                alarm.setAlarm(cal, nearestTime, context, requestCode, alarmParameters);
 
                 Log.e("Timing Updated", "Get Data After Main Data Inserted");
 
             } else {
                 Log.e("AgentMainData", "Empty");
+                settingNotificationAlarm();
             }
+
+        }
+    }
+
+    private void settingNotificationAlarm() {
+        Intent intent = new Intent(context, AlarmReciever.class);
+        intent.putExtra("from", "notification");
+        Log.e("RequestId", 9090 + "");
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 9090, intent, 0);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(ALARM_SERVICE);
+
+
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        month++;
+        int day = 01;
+        Log.e("Notification set ", "at: " + year + "," + month + "," + day);
+        calendar.set(year, month, day, 0, 0, 5);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+        } else {
+            alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
         }
 
     }
@@ -234,82 +281,92 @@ public class AlarmReciever extends BroadcastReceiver {
         String nextdate = getNextDate();
         int onlyDate = getOnlyNextDate();
 
-        List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(String.valueOf(onlyDate));
+        List<TodayTimings> getTodayTimings = databaseHelper.getMergeTodayTiming(String.valueOf(onlyDate));
 
-        if (getTodayDataList.size() > 0) {
-
-            for (int i = 0; i < getTodayDataList.size(); i++) {
-
-                ArrayList<NotiType> notiTypeArrayList = prepareNotiTypeList();
-                TodaysData todaysData = getTodayDataList.get(i);
-
-                String SplitFajrTime[] = todaysData.getFajr().split(" ");
-                String SplitDhuhrTime[] = todaysData.getDhuhr().split(" ");
-                String SplitAsrTime[] = todaysData.getAsr().split(" ");
-                String SplitMaghribTime[] = todaysData.getMaghrib().split(" ");
-                String SplitIshaTime[] = todaysData.getIsha().split(" ");
-
-                String FajrTime = SplitFajrTime[0];
-                String DhuhrTime = SplitDhuhrTime[0];
-                String AsrTime = SplitAsrTime[0];
-                String MaghribTime = SplitMaghribTime[0];
-                String IshaTime = SplitIshaTime[0];
-
-                List<TodayTimings> todayTimingsList = new ArrayList<>();
-
-                todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(0).getAzan(), FajrTime, notiTypeArrayList.get(0).getType(), notiTypeArrayList.get(0).getTunePath()));
-                todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(1).getAzan(), DhuhrTime, notiTypeArrayList.get(1).getType(), notiTypeArrayList.get(1).getTunePath()));
-                todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(2).getAzan(), AsrTime, notiTypeArrayList.get(2).getType(), notiTypeArrayList.get(2).getTunePath()));
-                todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(3).getAzan(), MaghribTime, notiTypeArrayList.get(3).getType(), notiTypeArrayList.get(3).getTunePath()));
-                todayTimingsList.add(new TodayTimings(nextdate, notiTypeArrayList.get(4).getAzan(), IshaTime, notiTypeArrayList.get(4).getType(), notiTypeArrayList.get(4).getTunePath()));
-
-
-                databaseHelper.insertIntoTodayTiming(todayTimingsList);
-                DatabaseUtils.peekAllDataFromTodayTimimgs(context);
-                Log.e("Retrieve...", "Data from Today Timing Retrieve Successfully...");
+        for (TodayTimings todayTimings : getTodayTimings) {
+            String[] timeSplit = todayTimings.getActualTime().split(" ");
+            todayTimings.setActualTime(timeSplit[0]);
+            todayTimings.setDate(nextdate);
+            if (todayTimings.getNotiType() == null) {
+                todayTimings.setNotiType("1");
             }
+            if (todayTimings.getTunePath() == null) {
+                todayTimings.setTunePath("");
+            }
+        }
 
+        if (getTodayTimings.size() > 0) {
+            databaseHelper.insertIntoTodayTiming(getTodayTimings);
+            DatabaseUtils.peekAllDataFromTodayTimimgs(context);
+            Log.e("Retrieve...", "Data from Today Timing Retrieve Successfully...");
         } else {
             Log.e("TodaysData", "Empty");
         }
     }
 
-    private ArrayList<NotiType> prepareNotiTypeList() {
-
-        ArrayList<NotiType> notiTypeList = new ArrayList();
-        String jsonString = loadNotiTypeJSON();
-        try {
-
-            JSONArray jsonArray = new JSONArray(jsonString);
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject getData = jsonArray.getJSONObject(i);
-
-                NotiType notiType = new NotiType(getData.getString("Azan"), getData.getString("Type"), getData.getString("TPath"));
-                notiTypeList.add(notiType);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return notiTypeList;
+    private PendingIntent createOnDismissedIntent(Context context, int notificationId) {
+        Intent intent = new Intent(context, NotificationDismissedReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context.getApplicationContext(),
+                notificationId, intent, 0);
+        return pendingIntent;
     }
 
-    private String loadNotiTypeJSON() {
-        String json = null;
-        try {
-            InputStream is = context.getAssets().open("NotiType.json");
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            is.read(buffer);
-            is.close();
-            json = new String(buffer, "UTF-8");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
+    private void sendNotification(String msg) {
+
+        mediaPlayer = MediaPlayer.create(context, R.raw.notification);
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mediaPlayer.start();
+
+        alarmNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage("com.example.muhammadzeeshan.muslim360withservice");
+        PendingIntent contentIntent = PendingIntent.getActivity(context, 1, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        //Create notification
+        NotificationCompat.Builder alamNotificationBuilder = new NotificationCompat.Builder(context)
+                .setSmallIcon(R.drawable.xhdpi)
+                .setContentTitle("Reminder")
+                .setWhen(5000)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(msg))
+                .setContentText(msg)
+                .setAutoCancel(true)
+                .setDeleteIntent(createOnDismissedIntent(context, 1))
+                .setDefaults(Notification.DEFAULT_SOUND);
+        alamNotificationBuilder.setContentIntent(contentIntent);
+
+        //notiy notification manager about new notification
+        alarmNotificationManager.notify(1, alamNotificationBuilder.build());
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void createNotificationChannel(String msg) {
+
+        mediaPlayer = MediaPlayer.create(context, R.raw.notification);
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mediaPlayer.start();
+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.deleteNotificationChannel(CHANNEL_ID);
+
+        CharSequence name = context.getString(R.string.channel_name);// The user-visible name of the channel.
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
+
+        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage("com.example.muhammadzeeshan.muslim360withservice");
+        PendingIntent contentIntent = PendingIntent.getActivity(context, 1,
+                launchIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.xxxhdpi)
+                .setContentTitle("Reminder")
+                .setContentText(msg)
+                .setDeleteIntent(createOnDismissedIntent(context, 1))
+                .setDefaults(Notification.DEFAULT_SOUND);
+        notification.setContentIntent(contentIntent);
+
+        notificationManager.createNotificationChannel(mChannel);
+
+        notificationManager.notify(1, notification.build());
+
     }
 
 }

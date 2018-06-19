@@ -12,15 +12,8 @@ import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseHelper;
 import com.example.muhammadzeeshan.muslim360withservice.Database.DatabaseUtils;
 import com.example.muhammadzeeshan.muslim360withservice.Model.AlarmParameters;
 import com.example.muhammadzeeshan.muslim360withservice.Model.MainData;
-import com.example.muhammadzeeshan.muslim360withservice.Model.NotiType;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodayTimings;
-import com.example.muhammadzeeshan.muslim360withservice.Model.TodaysData;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -84,7 +77,7 @@ public class DeviceBootReceiver extends BroadcastReceiver {
         String Date = splitYear[2];
 
         //  Get Nearest Next Time.............................
-        String nextNearestAlarm = databaseHelper.getNearestTime(currentTime);
+        String nextNearestAlarm = databaseHelper.getNearest(currentTime);
 
         if (!nextNearestAlarm.isEmpty()) {
 
@@ -228,80 +221,27 @@ public class DeviceBootReceiver extends BroadcastReceiver {
         String nextDate = getNextDate();
         int date = getOnlyNextDate();
 
-        List<TodaysData> getTodayDataList = databaseHelper.getTodaysDataFromAzanTiming(String.valueOf(date));
+        List<TodayTimings> getTodayTimings = databaseHelper.getMergeTodayTiming(String.valueOf(date));
 
-        if (getTodayDataList.size() > 0) {
-
-            for (int i = 0; i < getTodayDataList.size(); i++) {
-
-                ArrayList<NotiType> notiTypeArrayList = prepareNotiTypeList();
-                TodaysData todaysData = getTodayDataList.get(i);
-
-                String SplitFajrTime[] = todaysData.getFajr().split(" ");
-                String SplitDhuhrTime[] = todaysData.getDhuhr().split(" ");
-                String SplitAsrTime[] = todaysData.getAsr().split(" ");
-                String SplitMaghribTime[] = todaysData.getMaghrib().split(" ");
-                String SplitIshaTime[] = todaysData.getIsha().split(" ");
-
-                String FajrTime = SplitFajrTime[0];
-                String DhuhrTime = SplitDhuhrTime[0];
-                String AsrTime = SplitAsrTime[0];
-                String MaghribTime = SplitMaghribTime[0];
-                String IshaTime = SplitIshaTime[0];
-
-                List<TodayTimings> todayTimingsList = new ArrayList<>();
-
-                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(0).getAzan(), FajrTime, notiTypeArrayList.get(0).getType(), notiTypeArrayList.get(0).getTunePath()));
-                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(1).getAzan(), DhuhrTime, notiTypeArrayList.get(1).getType(), notiTypeArrayList.get(1).getTunePath()));
-                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(2).getAzan(), AsrTime, notiTypeArrayList.get(2).getType(), notiTypeArrayList.get(2).getTunePath()));
-                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(3).getAzan(), MaghribTime, notiTypeArrayList.get(3).getType(), notiTypeArrayList.get(3).getTunePath()));
-                todayTimingsList.add(new TodayTimings(nextDate, notiTypeArrayList.get(4).getAzan(), IshaTime, notiTypeArrayList.get(4).getType(), notiTypeArrayList.get(4).getTunePath()));
-
-
-                databaseHelper.insertIntoTodayTiming(todayTimingsList);
+        for (TodayTimings todayTimings : getTodayTimings) {
+            String[] timeSplit = todayTimings.getActualTime().split(" ");
+            todayTimings.setActualTime(timeSplit[0]);
+            todayTimings.setDate(nextDate);
+            if (todayTimings.getNotiType() == null) {
+                todayTimings.setNotiType("1");
             }
+            if (todayTimings.getTunePath() == null) {
+                todayTimings.setTunePath("");
+            }
+        }
 
+        if (getTodayTimings.size() > 0) {
+            databaseHelper.insertIntoTodayTiming(getTodayTimings);
+            DatabaseUtils.peekAllDataFromTodayTimimgs(context);
+            Log.e("Retrieve...", "Data from Today Timing Retrieve Successfully...");
         } else {
             Log.e("TodaysData", "Empty");
         }
-    }
-
-    private ArrayList<NotiType> prepareNotiTypeList() {
-
-        ArrayList<NotiType> notiTypeList = new ArrayList();
-        String jsonString = loadNotiTypeJSON();
-        try {
-
-            JSONArray jsonArray = new JSONArray(jsonString);
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject getData = jsonArray.getJSONObject(i);
-
-                NotiType notiType = new NotiType(getData.getString("Azan"), getData.getString("Type"), getData.getString("TPath"));
-                notiTypeList.add(notiType);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return notiTypeList;
-    }
-
-    private String loadNotiTypeJSON() {
-        String json = null;
-        try {
-            InputStream is = context.getAssets().open("NotiType.json");
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            is.read(buffer);
-            is.close();
-            json = new String(buffer, "UTF-8");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
     }
 
 }

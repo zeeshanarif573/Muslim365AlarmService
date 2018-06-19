@@ -13,7 +13,6 @@ import com.example.muhammadzeeshan.muslim360withservice.Model.ManualCorrection;
 import com.example.muhammadzeeshan.muslim360withservice.Model.NotiType;
 import com.example.muhammadzeeshan.muslim360withservice.Model.Timings;
 import com.example.muhammadzeeshan.muslim360withservice.Model.TodayTimings;
-import com.example.muhammadzeeshan.muslim360withservice.Model.TodaysData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,20 +23,17 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 2;
-    private static final String DATABASE_NAME = "Azaan";
-
     public static final String TABLE_AZAN_TIMIMG = "azan_timimgs";
     public static final String TABLE_DTS = "DTS";
     public static final String TABLE_MANUAL_CORRECTION = "ManualCorrection";
     public static final String TABLE_NOTITYPE = "NotiType";
     public static final String TABLE_TODAY_TIMINGS = "today_timimgs";
-
-
+    public static final String TABLE_DAILY_VERSE = "daily_verse";
+    private static final int DATABASE_VERSION = 4;
+    private static final String DATABASE_NAME = "Azaan";
     private static final String CREATE_AZAN_TABLE = "CREATE TABLE " + TABLE_AZAN_TIMIMG +
             "(Id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            " Date TEXT, Fajr TEXT, Sunrise TEXT, Dhuhr TEXT, Asr TEXT, Sunset TEXT, Maghrib TEXT, Isha TEXT, Imsak TEXT, " +
-            " Midnight TEXT );";
+            " Date TEXT, AzanName TEXT, Time TEXT);";
 
     private static final String CREATE_MANUAL_CORRECTION_TABLE = "CREATE TABLE " + TABLE_MANUAL_CORRECTION +
             "(Date TEXT, Azan TEXT, Time TEXT); ";
@@ -51,6 +47,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String CREATE_TODAY_TIMINGS_TABLE = "CREATE TABLE " + TABLE_TODAY_TIMINGS +
             "(Date TEXT, Azan TEXT, Time TEXT, NotiType TEXT, TunePath TEXT); ";
 
+    private static final String CREATE_DAILY_VERSE_TABLE = "CREATE TABLE " + TABLE_DAILY_VERSE +
+            "(Date TEXT, Title TEXT, Time TEXT, Arabic TEXT, English TEXT); ";
+
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -63,15 +62,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL(CREATE_DTS_TABLE);
         sqLiteDatabase.execSQL(CREATE_NOTI_TYPE_TABLE);
         sqLiteDatabase.execSQL(CREATE_TODAY_TIMINGS_TABLE);
+        sqLiteDatabase.execSQL(CREATE_DAILY_VERSE_TABLE);
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_AZAN_TIMIMG);
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_MANUAL_CORRECTION);
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_DTS);
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_NOTITYPE);
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_TODAY_TIMINGS);
+    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
+        if (oldVersion < newVersion) {
+            sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_AZAN_TIMIMG);
+            sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_MANUAL_CORRECTION);
+            sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_DTS);
+            sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_NOTITYPE);
+            sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_TODAY_TIMINGS);
+            sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_DAILY_VERSE);
+            onCreate(sqLiteDatabase);
+        }
     }
 
 
@@ -83,15 +87,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             ContentValues values = new ContentValues();
 
             values.put("Date", timings.getDate());
-            values.put("Fajr", timings.getFajr());
-            values.put("Sunrise", timings.getSunrise());
-            values.put("Dhuhr", timings.getDhuhr());
-            values.put("Asr", timings.getAsr());
-            values.put("Sunset", timings.getSunset());
-            values.put("Maghrib", timings.getMaghrib());
-            values.put("Isha", timings.getIsha());
-            values.put("Imsak", timings.getImsak());
-            values.put("Midnight", timings.getMidnight());
+            values.put("AzanName", timings.getAzan());
+            values.put("Time", timings.getTime());
 
             db.insert(TABLE_AZAN_TIMIMG, null, values);
         }
@@ -121,17 +118,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
                 timings.setId(cursor.getString(0));
                 timings.setDate(Integer.parseInt(cursor.getString(1)));
-                timings.setFajr(cursor.getString(2));
-                timings.setSunrise(cursor.getString(3));
-                timings.setDhuhr(cursor.getString(4));
-                timings.setAsr(cursor.getString(5));
-                timings.setSunset(cursor.getString(6));
-                timings.setMaghrib(cursor.getString(7));
-                timings.setIsha(cursor.getString(8));
-                timings.setImsak(cursor.getString(9));
-                timings.setMidnight(cursor.getString(10));
-
-
+                timings.setAzan(cursor.getString(2));
+                timings.setTime(cursor.getString(3));
                 // Adding contact to list
                 timingsList.add(timings);
             } while (cursor.moveToNext());
@@ -234,32 +222,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    public List<TodaysData> getTodaysDataFromAzanTiming(String date) {
-        List<TodaysData> todaysDataList = new ArrayList<>();
+    public List<TodayTimings> getMergeTodayTiming(String date) {
 
+        List<TodayTimings> todayTimingsList = new ArrayList<>();
         SQLiteDatabase db = this.getWritableDatabase();
 
-        Cursor cursor = db.query(TABLE_AZAN_TIMIMG, new String[]{"*"}, "Date" + " =? ", new String[]{date}, null, null, null, null);
+        String query = "Select AT.Date, AT.AzanName, AT.Time, NT.NotiType, NT.TunePath " +
+                "FROM " + TABLE_AZAN_TIMIMG + " " +
+                "AT LEFT JOIN " + TABLE_NOTITYPE + " NT ON AT.AzanName = NT.Azan " +
+                "WHERE AT.Date = '" + date + "'";
+
+        Cursor cursor = db.rawQuery(query, null);
 
         if (cursor.moveToFirst()) {
             do {
-                TodaysData todaysData = new TodaysData();
+                TodayTimings todayTimings = new TodayTimings();
 
-                todaysData.setDate(cursor.getString(1));
-                todaysData.setFajr(cursor.getString(2));
-                todaysData.setDhuhr(cursor.getString(4));
-                todaysData.setAsr(cursor.getString(5));
-                todaysData.setMaghrib(cursor.getString(7));
-                todaysData.setIsha(cursor.getString(8));
-
+                todayTimings.setDate(cursor.getString(0));
+                todayTimings.setAzan(cursor.getString(1));
+                todayTimings.setActualTime(cursor.getString(2));
+                todayTimings.setNotiType(cursor.getString(3));
+                todayTimings.setTunePath(cursor.getString(4));
                 // Adding contact to list
-                todaysDataList.add(todaysData);
+                todayTimingsList.add(todayTimings);
             } while (cursor.moveToNext());
         }
 
         db.close();
-        return todaysDataList;
+        return todayTimingsList;
     }
+
 
     public List<TodayTimings> getAllTodayTimingData() {
         List<TodayTimings> todayTimingsList = new ArrayList<TodayTimings>();
@@ -289,44 +281,104 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return todayTimingsList;
     }
 
-    public String getNearestTime(String time) {
+    public TodayTimings getCurrentAzanParams(String time) {
+        TodayTimings todayTimings = new TodayTimings();
+
+        // Select All Query
+        String selectQuery = "SELECT * FROM " + TABLE_TODAY_TIMINGS + " where Time ='" + time + "'";
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                todayTimings.setAzan(cursor.getString(1));
+                todayTimings.setActualTime(cursor.getString(2));
+                todayTimings.setNotiType(cursor.getString(3));
+                todayTimings.setTunePath(cursor.getString(4));
+
+            } while (cursor.moveToNext());
+        }
+
+        db.close();
+        return todayTimings;
+    }
+
+    public String getNearest(String time) {
         String nextTime = "";
         SQLiteDatabase db = this.getWritableDatabase();
-        String query = "WITH RECURSIVE today(Time) AS (" +
-                " VALUES('')" +
-                " UNION ALL " +
-                " SELECT today_timimgs.Time" +
-                " FROM today_timimgs, today WHERE '" + time +
-                "' < today_timimgs.Time And '" + time +
-                "' > today.Time)" +
-                " SELECT * FROM today " +
-                " Where Time <> ''" +
-                " Order by Time" +
-                " LIMIT 1";
+
+        String query = "SELECT today_timimgs.Time FROM today_timimgs Where today_timimgs.Time > '" + time + "' Limit 1";
 
         Cursor cursor = db.rawQuery(query, null);
 
         while (cursor.moveToNext()) {
             nextTime = cursor.getString(0);
         }
-
         db.close();
         return nextTime;
     }
 
+
+    /* NotiType Table Functions */
+    public void insertIntoNotiType(List<NotiType> notiTypeList) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        for (NotiType notiType : notiTypeList) {
+            ContentValues values = new ContentValues();
+
+            values.put("Date", notiType.getDate());
+            values.put("Azan", notiType.getAzan());
+            values.put("NotiType", notiType.getType());
+            values.put("TunePath", notiType.getTunePath());
+
+            db.insert(TABLE_NOTITYPE, null, values);
+        }
+
+        db.close();
+    }
+
+    public List<NotiType> getAllNotiTypeData() {
+        List<NotiType> notiTypeList = new ArrayList<NotiType>();
+
+        // Select All Query
+        String selectQuery = "SELECT * FROM " + TABLE_NOTITYPE;
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                NotiType notiType = new NotiType();
+
+                notiType.setDate(cursor.getString(0));
+                notiType.setAzan(cursor.getString(1));
+                notiType.setType(cursor.getString(2));
+                notiType.setTunePath(cursor.getString(3));
+
+                // Adding contact to list
+                notiTypeList.add(notiType);
+            } while (cursor.moveToNext());
+        }
+
+        db.close();
+        return notiTypeList;
+    }
 
     public AlarmParameters getAlarmParams(String time) {
 
         AlarmParameters alarmParameters = new AlarmParameters();
 
         SQLiteDatabase db = this.getWritableDatabase();
-        String query = "Select NotiType,TunePath from today_timimgs where Time ='" + time + "'";
+        String query = "Select Azan, NotiType, TunePath,Time from today_timimgs where Time ='" + time + "'";
 
         Cursor cursor = db.rawQuery(query, null);
 
         while (cursor.moveToNext()) {
-            alarmParameters.setNotiType(cursor.getString(0));
-            alarmParameters.setTunePath(cursor.getString(1));
+            alarmParameters.setAzanName(cursor.getString(0));
+            alarmParameters.setNotiType(cursor.getString(1));
+            alarmParameters.setTunePath(cursor.getString(2));
+            alarmParameters.setTime(cursor.getString(3));
 
         }
         db.close();
@@ -334,6 +386,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
+    /* Delete Functions */
     public void deleteTodayAzanTimings() {
         SQLiteDatabase db = this.getWritableDatabase();
         String query = "delete from " + TABLE_TODAY_TIMINGS;
@@ -341,16 +394,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    /* Update Status in Today Timing Table */
-    public int UpdateTodayTimingTable(String time) {
-        SQLiteDatabase database = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-
-        values.put("status", 1);
-
-        int count = database.update(TABLE_TODAY_TIMINGS, values, "Timing = '" + time + "'", null);
-        return count;
+    public void deletefromNotiType() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "delete from " + TABLE_NOTITYPE;
+        db.execSQL(query);
+        db.close();
     }
+
+    public void deletefromManualCorrection() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "delete from " + TABLE_MANUAL_CORRECTION;
+        db.execSQL(query);
+        db.close();
+    }
+
+    public void deletefromDTS() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "delete from " + TABLE_DTS;
+        db.execSQL(query);
+        db.close();
+    }
+
 
     public int getDateCount(String date) {
         String countQuery = "SELECT * FROM " + TABLE_TODAY_TIMINGS + " WHERE Date ='" + date + "'";
@@ -379,8 +443,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 " FROM today_timimgs TT " +
                 " LEFT JOIN ManualCorrection MC ON TT.Azan = MC.Azan" +
                 " CROSS JOIN DTS DTS" +
-//                " LEFT JOIN NotiType TT ON TT.Azan = NT.Azan" +
-                " WHERE TT.Date = '" + date + "'";
+                " LEFT JOIN NotiType NT ON TT.Azan = NT.Azan" +
+                " WHERE TT.Date = '" + date + "'" +
+                " Order by TT.Time ";
 
         Cursor cursor = db.rawQuery(query, null);
 

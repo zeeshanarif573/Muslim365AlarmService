@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Muslim360WithService.iml" filepath="$PROJECT_DIR$/Muslim360WithService.iml" />
+      <module fileurl="file://C:\Users\Muhammad Zeeshan\AndroidStudioProjects\Muslim365AlarmService\Muslim360WithService.iml" filepath="C:\Users\Muhammad Zeeshan\AndroidStudioProjects\Muslim365AlarmService\Muslim360WithService.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Muslim365AlarmService.iml" filepath="$PROJECT_DIR$/Muslim365AlarmService.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

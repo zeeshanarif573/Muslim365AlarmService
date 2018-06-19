@@ -7,96 +7,25 @@ package com.example.muhammadzeeshan.muslim360withservice.Model;
 public class Timings {
 
     int date;
-    String Id, fajr , Sunrise, Dhuhr , Asr, Sunset , Maghrib, Isha, Imsak, Midnight;
+    String Id, azan, time;
 
 
-    public Timings(int date, String fajr, String sunrise, String dhuhr, String asr, String sunset, String maghrib, String isha, String imsak, String midnight) {
+    public Timings(int date, String azan, String time) {
         this.date = date;
-        this.fajr = fajr;
-        Sunrise = sunrise;
-        Dhuhr = dhuhr;
-        Asr = asr;
-        Sunset = sunset;
-        Maghrib = maghrib;
-        Isha = isha;
-        Imsak = imsak;
-        Midnight = midnight;
+        this.azan = azan;
+        this.time = time;
     }
 
 
     public Timings() {
     }
 
-    public String getFajr() {
-        return fajr;
+    public int getDate() {
+        return date;
     }
 
-    public void setFajr(String fajr) {
-        this.fajr = fajr;
-    }
-
-    public String getSunrise() {
-        return Sunrise;
-    }
-
-    public void setSunrise(String sunrise) {
-        Sunrise = sunrise;
-    }
-
-    public String getDhuhr() {
-        return Dhuhr;
-    }
-
-    public void setDhuhr(String dhuhr) {
-        Dhuhr = dhuhr;
-    }
-
-    public String getAsr() {
-        return Asr;
-    }
-
-    public void setAsr(String asr) {
-        Asr = asr;
-    }
-
-    public String getSunset() {
-        return Sunset;
-    }
-
-    public void setSunset(String sunset) {
-        Sunset = sunset;
-    }
-
-    public String getMaghrib() {
-        return Maghrib;
-    }
-
-    public void setMaghrib(String maghrib) {
-        Maghrib = maghrib;
-    }
-
-    public String getIsha() {
-        return Isha;
-    }
-
-    public void setIsha(String isha) {
-        Isha = isha;
-    }
-
-    public String getImsak() {
-        return Imsak;
-    }
-
-    public void setImsak(String imsak) {
-        Imsak = imsak;
-    }
-
-    public String getMidnight() {
-        return Midnight;
-    }
-
-    public void setMidnight(String midnight) {
-        Midnight = midnight;
+    public void setDate(int date) {
+        this.date = date;
     }
 
     public String getId() {
@@ -107,11 +36,19 @@ public class Timings {
         Id = id;
     }
 
-    public int getDate() {
-        return date;
+    public String getAzan() {
+        return azan;
     }
 
-    public void setDate(int date) {
-        this.date = date;
+    public void setAzan(String azan) {
+        this.azan = azan;
+    }
+
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
     }
 }

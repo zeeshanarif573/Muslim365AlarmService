@@ -6,18 +6,27 @@ package com.example.muhammadzeeshan.muslim360withservice.Model;
 
 public class TodaysData {
 
-    String Date, fajr , Dhuhr , Asr,  Maghrib, Isha;
+    String Date, fajr , Dhuhr , Asr,  Maghrib, Isha, Imsak;
 
-    public TodaysData(String date, String fajr, String dhuhr, String asr, String maghrib, String isha) {
+    public TodaysData(String date, String fajr, String dhuhr, String asr, String maghrib, String isha, String imsak) {
         Date = date;
         this.fajr = fajr;
         Dhuhr = dhuhr;
         Asr = asr;
         Maghrib = maghrib;
         Isha = isha;
+        Imsak = imsak;
     }
 
     public TodaysData() {
+    }
+
+    public String getImsak() {
+        return Imsak;
+    }
+
+    public void setImsak(String imsak) {
+        Imsak = imsak;
     }
 
     public String getDate() {

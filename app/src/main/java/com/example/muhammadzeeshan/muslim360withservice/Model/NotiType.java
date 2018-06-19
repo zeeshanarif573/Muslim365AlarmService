@@ -6,15 +6,24 @@ package com.example.muhammadzeeshan.muslim360withservice.Model;
 
 public class NotiType {
 
-    String Azan, Type, TunePath;
+    String Date, Azan, Type, TunePath;
 
-    public NotiType( String azan, String type,String tunePath) {
+    public NotiType(String date, String azan, String type, String tunePath) {
+        Date = date;
         Azan = azan;
         Type = type;
         TunePath = tunePath;
     }
 
     public NotiType() {
+    }
+
+    public String getDate() {
+        return Date;
+    }
+
+    public void setDate(String date) {
+        Date = date;
     }
 
     public String getAzan() {
